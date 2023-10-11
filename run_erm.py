@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from lightning.pytorch.cli import LightningCLI
 
-# from src.dataops.datamodules import ClassificationDataModule
-from src.modelops.tasks import ClassificationTask
+# from src.dataops.datamodules import ERMDataModule
+from src.modelops.tasks import ERMTask
 
 def cli():
     LightningCLI(
-        model_class=ClassificationTask,
-        # datamodule_class=ClassificationDataModule,
+        model_class=ERMTask,
+        # datamodule_class=ERMDataModule,
         auto_configure_optimizers=False,
     )
 

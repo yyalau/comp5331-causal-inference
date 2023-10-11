@@ -11,10 +11,14 @@ from torchmetrics import Accuracy, F1Score, Precision, Recall
 import lightning.pytorch as pl
 from lightning.pytorch.utilities.types import OptimizerLRSchedulerConfig
 
-from .dependencies import NNModule, X, Y
-from .dependencies import *
+from .dependencies import (
+    NNModule, X, Y,
+    ClassificationModel, Classification_Y,
+    ERMModel, ERM_X,
+    FASTModel, FAST_X,
+)
 
-__all__ = ['ClassificationTask', 'FASTTask']
+__all__ = ['ERMTask', 'FASTTask']
 
 
 class BaseTask(pl.LightningModule, Generic[X, Y]):
@@ -79,15 +83,16 @@ class BaseTask(pl.LightningModule, Generic[X, Y]):
         return OptimizerLRSchedulerConfig(optimizer=optimizer, lr_scheduler=scheduler)
 
 
-class ClassificationTask(BaseTask[Classifier_X, Classifier_Y]):
+class ClassificationTask(BaseTask[X, Classification_Y]):
     def __init__(
         self,
+        model: ClassificationModel[X],
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
     ) -> None:
         super().__init__(
-            model=ClassifierModel(),    # TODO: Instantiate a concrete implementation
+            model=model,
             optimizer=optimizer,
             scheduler=scheduler,
             loss=F.cross_entropy,
@@ -100,7 +105,21 @@ class ClassificationTask(BaseTask[Classifier_X, Classifier_Y]):
         )
 
 
-class FASTTask(BaseTask[FAST_X, FAST_Y]):
+class ERMTask(ClassificationTask[ERM_X]):
+    def __init__(
+        self,
+        *,
+        optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
+        scheduler: Callable[[Optimizer], LRScheduler],
+    ) -> None:
+        super().__init__(
+            model=ERMModel(),    # TODO: Instantiate a concrete implementation
+            optimizer=optimizer,
+            scheduler=scheduler,
+        )
+
+
+class FASTTask(ClassificationTask[FAST_X]):
     def __init__(
         self,
         *,
@@ -111,11 +130,4 @@ class FASTTask(BaseTask[FAST_X, FAST_Y]):
             model=FASTModel(),    # TODO: Instantiate a concrete implementation
             optimizer=optimizer,
             scheduler=scheduler,
-            loss=F.cross_entropy,
-            metrics={
-                'accuracy': Accuracy(task='multiclass'),
-                'precision': Precision(task='multiclass'),
-                'recall': Recall(task='multiclass'),
-                'f1': F1Score(task='multiclass'),
-            },
         )

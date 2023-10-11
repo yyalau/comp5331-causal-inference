@@ -7,8 +7,9 @@ import torch
 
 __all__ = [
     'StyleTransfer_X', 'StyleTransfer_Y', 'StyleTransferModel',
-    'Classifier_X', 'Classifier_Y', 'ClassifierModel',
-    'FAST_X', 'FAST_Y', 'FASTModel',
+    'Classification_Y', 'ClassificationModel',
+    'ERM_X', 'ERMModel',
+    'FAST_X', 'FASTModel',
 ]
 
 
@@ -65,23 +66,29 @@ Represents a style transfer model for images.
 """
 
 
-Classifier_X: TypeAlias = torch.Tensor
-"""
-A batch of images to classify.
-
-Shape: `(batch_size, num_channels, depth, height, width)`
-"""
-
-Classifier_Y: TypeAlias = torch.Tensor
+Classification_Y: TypeAlias = torch.Tensor
 """
 A batch of class probabilities.
 
 Shape: `(batch_size, num_classes)`
 """
 
-ClassifierModel: TypeAlias = NNModule[Classifier_X, Classifier_Y]
+ClassificationModel: TypeAlias = NNModule[X, Classification_Y]
 """
-Represents a standard ERM (Empirical Risk Minimization) classifier model for images.
+Represents a classification model.
+"""
+
+
+ERM_X: TypeAlias = torch.Tensor
+"""
+A batch of images to classify.
+
+Shape: `(batch_size, num_channels, depth, height, width)`
+"""
+
+ERMModel: TypeAlias = ClassificationModel[ERM_X]
+"""
+Represents a standard ERM (Empirical Risk Minimization) classifier for images.
 """
 
 
@@ -100,14 +107,7 @@ class FAST_X(TypedDict):
     Shape: `(batch_size, num_channels, depth, height, width)`
     """
 
-FAST_Y: TypeAlias = torch.Tensor
+FASTModel: TypeAlias = ClassificationModel[FAST_X]
 """
-A batch of class probabilities.
-
-Shape: `(batch_size, num_classes)`
-"""
-
-FASTModel: TypeAlias = NNModule[FAST_X, FAST_Y]
-"""
-Represents a FAST (Front-door Adjustment via Neural Style Transfer) classifier model for images.
+Represents a FAST (Front-door Adjustment via Neural Style Transfer) classifier for images.
 """

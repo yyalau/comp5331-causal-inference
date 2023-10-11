@@ -30,13 +30,9 @@
 
 1. Activate a virtual Python environment (e.g. [conda](https://docs.conda.io/en/latest/)).
 2. Install the dependencies.
-```
-python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+```sh
+python -m pip install torch==2.1.* torchvision==0.16.* torchaudio==2.1.* --index-url https://download.pytorch.org/whl/cu118
 python -m pip install -r requirements.txt
-```
-3. Download the datasets.
-```
-# Download to data/
 ```
 
 ## Usage
@@ -45,14 +41,16 @@ python -m pip install -r requirements.txt
 
 To train the model with the **baseline** method (standard Empirical Risk Minimization):
 
-```
+```sh
+# By default, checkpoints are stored in `./checkpoints/erm`
 python run_erm.py [OPTIONS]
 ```
 
 
 To train the model with the **proposed** method (Front-door Adjustment via Neural Style Transfer):
 
-```
+```sh
+# By default, checkpoints are stored in `./checkpoints/fast`
 python run_fast.py [OPTIONS]
 ```
 
