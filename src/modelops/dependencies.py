@@ -8,7 +8,7 @@ import torch
 __all__ = [
     'StyleTransfer_X', 'StyleTransfer_Y', 'StyleTransferModel',
     'Classifier_X', 'Classifier_Y', 'ClassifierModel',
-    'CausalFD_X', 'CausalFD_Y', 'CausalFDModel',
+    'FAST_X', 'FAST_Y', 'FASTModel',
 ]
 
 
@@ -81,11 +81,11 @@ Shape: `(batch_size, num_classes)`
 
 ClassifierModel: TypeAlias = NNModule[Classifier_X, Classifier_Y]
 """
-Represents a classifier model for images.
+Represents a standard ERM (Empirical Risk Minimization) classifier model for images.
 """
 
 
-class CausalFD_X(TypedDict):
+class FAST_X(TypedDict):
     content: torch.Tensor
     """
     A batch of images to classify.
@@ -100,14 +100,14 @@ class CausalFD_X(TypedDict):
     Shape: `(batch_size, num_channels, depth, height, width)`
     """
 
-CausalFD_Y: TypeAlias = torch.Tensor
+FAST_Y: TypeAlias = torch.Tensor
 """
 A batch of class probabilities.
 
 Shape: `(batch_size, num_classes)`
 """
 
-CausalFDModel: TypeAlias = NNModule[CausalFD_X, CausalFD_Y]
+FASTModel: TypeAlias = NNModule[FAST_X, FAST_Y]
 """
-Represents a causal front-door adjustment model for images.
+Represents a FAST (Front-door Adjustment via Neural Style Transfer) classifier model for images.
 """

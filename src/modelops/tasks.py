@@ -14,7 +14,7 @@ from lightning.pytorch.utilities.types import OptimizerLRSchedulerConfig
 from .dependencies import NNModule, X, Y
 from .dependencies import *
 
-__all__ = ['ClassificationTask', 'CausalFDTask']
+__all__ = ['ClassificationTask', 'FASTTask']
 
 
 class BaseTask(pl.LightningModule, Generic[X, Y]):
@@ -100,7 +100,7 @@ class ClassificationTask(BaseTask[Classifier_X, Classifier_Y]):
         )
 
 
-class CausalFDTask(BaseTask[CausalFD_X, CausalFD_Y]):
+class FASTTask(BaseTask[FAST_X, FAST_Y]):
     def __init__(
         self,
         *,
@@ -108,7 +108,7 @@ class CausalFDTask(BaseTask[CausalFD_X, CausalFD_Y]):
         scheduler: Callable[[Optimizer], LRScheduler],
     ) -> None:
         super().__init__(
-            model=CausalFDModel(),    # TODO: Instantiate a concrete implementation
+            model=FASTModel(),    # TODO: Instantiate a concrete implementation
             optimizer=optimizer,
             scheduler=scheduler,
             loss=F.cross_entropy,

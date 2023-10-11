@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from lightning.pytorch.cli import LightningCLI
 
-# from src.dataops.datamodules import CausalFDDataModule
-from src.modelops.tasks import CausalFDTask
+# from src.dataops.datamodules import FASTDataModule
+from src.modelops.tasks import FASTTask
 
 def cli():
     LightningCLI(
-        model_class=CausalFDTask,
-        # datamodule_class=CausalFDDataModule,
+        model_class=FASTTask,
+        # datamodule_class=FASTDataModule,
         auto_configure_optimizers=False,
     )
 

@@ -19,14 +19,6 @@
 | 20942785 | BAHARI, Maral | Main framework |
 | 20943026 | BA SOWID, Badr Saleh Abdullah | Data config / preprocessing |
 
-## Tasks
-
-- Data config / preprocessing (1)
-- Main framework (2)
-- NST model (1)
-- Classifier model (1)
-- Data visualization / traineval (1)
-
 ## Installation
 
 ### Requirements
@@ -49,7 +41,20 @@ python -m pip install -r requirements.txt
 
 ## Usage
 
-TBD
+### Experiments
+
+To train the model with the **baseline** method (standard Empirical Risk Minimization):
+
+```
+python run_erm.py [OPTIONS]
+```
+
+
+To train the model with the **proposed** method (Front-door Adjustment via Neural Style Transfer):
+
+```
+python run_fast.py [OPTIONS]
+```
 
 ## References
 
