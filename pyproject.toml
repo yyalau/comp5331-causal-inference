@@ -1,5 +1,5 @@
 [tool.pyright]
-exclude = ["**/.*", "**/__pycache__", "**/node_modules", "data/**", "checkpoints/**"]
+exclude = ["**/.*", "**/__pycache__", "**/node_modules", "data/**", "experiments/**"]
 
 # These are set to "error" in "strict" mode
 reportConstantRedefinition = "warning"

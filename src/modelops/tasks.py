@@ -24,7 +24,7 @@ __all__ = ['ERMTask', 'FASTTask']
 class BaseTask(pl.LightningModule, Generic[X, Y]):
     def __init__(
         self,
-        model: NNModule[X, Y],
+        network: NNModule[X, Y],
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
@@ -33,7 +33,7 @@ class BaseTask(pl.LightningModule, Generic[X, Y]):
     ) -> None:
         super().__init__()
 
-        self.model = model
+        self.network = network
         self.optimizer = optimizer
         self.scheduler = scheduler
 
@@ -41,7 +41,7 @@ class BaseTask(pl.LightningModule, Generic[X, Y]):
         self.metrics = dict(metrics)
 
     def forward(self, batch: X) -> Y:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return self.model.forward(batch)
+        return self.network.forward(batch)
 
     def training_step(self, batch: tuple[X, Y], batch_idx: int) -> dict[str, torch.Tensor]:  # pyright: ignore[reportIncompatibleMethodOverride]
         eval_metrics = self._eval_step(batch, batch_idx)
@@ -86,13 +86,13 @@ class BaseTask(pl.LightningModule, Generic[X, Y]):
 class ClassificationTask(BaseTask[X, Classification_Y]):
     def __init__(
         self,
-        model: ClassificationModel[X],
+        network: ClassificationModel[X],
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
     ) -> None:
         super().__init__(
-            model=model,
+            network=network,
             optimizer=optimizer,
             scheduler=scheduler,
             loss=F.cross_entropy,
@@ -108,12 +108,13 @@ class ClassificationTask(BaseTask[X, Classification_Y]):
 class ERMTask(ClassificationTask[ERM_X]):
     def __init__(
         self,
+        network: ERMModel,
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
     ) -> None:
         super().__init__(
-            model=ERMModel(),    # TODO: Instantiate a concrete implementation
+            network=network,
             optimizer=optimizer,
             scheduler=scheduler,
         )
@@ -122,12 +123,13 @@ class ERMTask(ClassificationTask[ERM_X]):
 class FASTTask(ClassificationTask[FAST_X]):
     def __init__(
         self,
+        network: FASTModel,
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
     ) -> None:
         super().__init__(
-            model=FASTModel(),    # TODO: Instantiate a concrete implementation
+            network=network,
             optimizer=optimizer,
             scheduler=scheduler,
         )

@@ -42,7 +42,7 @@ python -m pip install -r requirements.txt
 To train the model with the **baseline** method (standard Empirical Risk Minimization):
 
 ```sh
-# By default, checkpoints are stored in `./checkpoints/erm`
+# By default, checkpoints are stored in `./experiments/erm`
 python run_erm.py [OPTIONS]
 ```
 
@@ -50,7 +50,7 @@ python run_erm.py [OPTIONS]
 To train the model with the **proposed** method (Front-door Adjustment via Neural Style Transfer):
 
 ```sh
-# By default, checkpoints are stored in `./checkpoints/fast`
+# By default, checkpoints are stored in `./experiments/fast`
 python run_fast.py [OPTIONS]
 ```
 
