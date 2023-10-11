@@ -1,108 +1,113 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Protocol, Self, TypeAlias, TypedDict
+from collections.abc import Iterator
+from typing import Protocol, TypeAlias, TypedDict, TypeVar
 
 import torch
 
 __all__ = [
-    'StyleTransferInputBatch', 'StyleTransferOutputBatch', 'StyleTransferModel',
-    'ClassifierInputBatch', 'ClassifierOutputBatch', 'ClassifierModel',
-    'CausalFDInputBatch', 'CausalFDOutputBatch', 'CausalFDModel',
+    'StyleTransfer_X', 'StyleTransfer_Y', 'StyleTransferModel',
+    'Classifier_X', 'Classifier_Y', 'ClassifierModel',
+    'CausalFD_X', 'CausalFD_Y', 'CausalFDModel',
 ]
 
-torch.nn.Module().state_dict
-class NNModule(Protocol):
-    def train(self, mode: bool = ...) -> Self:
-        """
-        See :meth:`torch.nn.Module.train`.
-        """
-        ...
 
-    def state_dict(self, *, prefix: str = ..., keep_vars: bool = ...) -> Mapping[str, object]:
-        """
-        See :meth:`torch.nn.Module.state_dict`.
-        """
-        ...
+# Input
+X = TypeVar('X')
+X_contra = TypeVar('X_contra', contravariant=True)
 
+# Output
+Y = TypeVar('Y')
+Y_co = TypeVar('Y_co', covariant=True)
 
-class StyleTransferInputBatch(TypedDict):
-    style: torch.Tensor
-    """Shape: `(batch_size, num_channels, depth, height, width)`"""
-
-    content: torch.Tensor
-    """Shape: `(batch_size, num_channels, depth, height, width)`"""
-
-StyleTransferOutputBatch: TypeAlias = torch.Tensor
-"""Shape: `(batch_size, num_classes)`"""
-
-class StyleTransferModel(NNModule, Protocol):
-    def forward(self, style: torch.Tensor, content: torch.Tensor) -> torch.Tensor:
-        """
-        Parameters
-        ----------
-        style : tensor with shape `(batch_size, num_channels, depth, height, width)`
-            A batch of images from which to extract the style.
-        content : tensor with shape `(batch_size, num_channels, depth, height, width)`
-            A batch of images to which the style is applied.
-
-        Returns
-        -------
-        tensor with shape `(batch_size, num_channels, depth, height, width)`
-            A batch of style-transferred images.
-        """
-        ...
-
-
-ClassifierInputBatch: TypeAlias = torch.Tensor
-"""Shape: `(batch_size, num_channels, depth, height, width)`"""
-
-ClassifierOutputBatch: TypeAlias = torch.Tensor
-"""Shape: `(batch_size, num_classes)`"""
-
-class ClassifierModel(NNModule, Protocol):
-    def forward(self, input_: torch.Tensor) -> torch.Tensor:
-        """
-        Parameters
-        ----------
-        input_ : tensor with shape `(batch_size, num_channels, depth, height, width)`
-            A batch of images to classify.
-
-        Returns
-        -------
-        tensor with shape `(batch_size, num_classes)`
-            A batch of class probabilities.
-        """
-        ...
-
-
-class CausalFDInputBatch(TypedDict):
-    content: torch.Tensor
-    """Shape: `(batch_size, num_channels, depth, height, width)`"""
-
-    styles: list[torch.Tensor]
+class NNModule(Protocol[X_contra, Y_co]):
     """
-    A list of tensors, one for each style.
+    A partial interface for :class:`torch.nn.Module`.
+    """
+    def forward(self, x: X_contra) -> Y_co:
+        """
+        Same as :meth:`torch.nn.Module.forward`.
+        """
+        ...
+
+    def parameters(self, recurse: bool = True) -> Iterator[torch.nn.Parameter]:
+        """
+        Same as :meth:`torch.nn.Module.parameters`.
+        """
+        ...
+
+
+class StyleTransfer_X(TypedDict):
+    style: torch.Tensor
+    """
+    A batch of images from which to extract the style.
 
     Shape: `(batch_size, num_channels, depth, height, width)`
     """
 
-CausalFDOutputBatch: TypeAlias = torch.Tensor
-"""Shape: `(batch_size, num_classes)`"""
+    content: torch.Tensor
+    """
+    A batch of images to which the style is applied.
 
-class CausalFDModel(NNModule, Protocol):
-    def forward(self, input_: torch.Tensor, styles: list[torch.Tensor]) -> torch.Tensor:
-        """
-        Parameters
-        ----------
-        input_ : tensor with shape `(batch_size, num_channels, depth, height, width)`
-            A batch of images to classify.
-        styles : list of tensor, each with shape `(batch_size, num_channels, depth, height, width)`
-            For each style, a batch of images from which to extract the style.
+    Shape: `(batch_size, num_channels, depth, height, width)`
+    """
 
-        Returns
-        -------
-        tensor with shape `(batch_size, num_classes)`
-            A batch of class probabilities.
-        """
-        ...
+StyleTransfer_Y: TypeAlias = torch.Tensor
+"""
+A batch of style-transferred images.
+
+Shape: `(batch_size, num_classes)`
+"""
+
+StyleTransferModel: TypeAlias = NNModule[StyleTransfer_X, StyleTransfer_Y]
+"""
+Represents a style transfer model for images.
+"""
+
+
+Classifier_X: TypeAlias = torch.Tensor
+"""
+A batch of images to classify.
+
+Shape: `(batch_size, num_channels, depth, height, width)`
+"""
+
+Classifier_Y: TypeAlias = torch.Tensor
+"""
+A batch of class probabilities.
+
+Shape: `(batch_size, num_classes)`
+"""
+
+ClassifierModel: TypeAlias = NNModule[Classifier_X, Classifier_Y]
+"""
+Represents a classifier model for images.
+"""
+
+
+class CausalFD_X(TypedDict):
+    content: torch.Tensor
+    """
+    A batch of images to classify.
+
+    Shape: `(batch_size, num_channels, depth, height, width)`
+    """
+
+    styles: list[torch.Tensor]
+    """
+    For each style, a tensor containing a batch of images from which to extract the style.
+
+    Shape: `(batch_size, num_channels, depth, height, width)`
+    """
+
+CausalFD_Y: TypeAlias = torch.Tensor
+"""
+A batch of class probabilities.
+
+Shape: `(batch_size, num_classes)`
+"""
+
+CausalFDModel: TypeAlias = NNModule[CausalFD_X, CausalFD_Y]
+"""
+Represents a causal front-door adjustment model for images.
+"""
