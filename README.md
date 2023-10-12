@@ -37,19 +37,25 @@ python -m pip install -r requirements.txt
 
 ## Usage
 
-### Experiments
+### Baseline Method
 
-To train the model with the **baseline** method (standard Empirical Risk Minimization):
-
+1. Train a standard ERM (Empirical Risk Minimization) classifier:
 ```sh
 # By default, checkpoints are stored in `./experiments/erm`
 python run_erm.py [OPTIONS]
 ```
 
+### Proposed Method
 
-To train the model with the **proposed** method (Front-door Adjustment via Neural Style Transfer):
-
+1. *(Optional)* Train a NST (Neural Style Transfer) model:
 ```sh
+# By default, checkpoints are stored in `./experiments/nst`
+python run_nst.py [OPTIONS]
+```
+
+2. Train a FAST (Front-door Adjustment via Neural Style Transfer) classifier:
+```sh
+# You can use the NST model from Step 1 or download a pretrained one
 # By default, checkpoints are stored in `./experiments/fast`
 python run_fast.py [OPTIONS]
 ```
