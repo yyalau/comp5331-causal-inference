@@ -81,10 +81,10 @@ A batch of class probabilities.
 Shape: `(batch_size, num_classes)`
 """
 
-ClassificationModel: TypeAlias = NNModule[X, Classification_Y]
-"""
-Represents a classification model.
-"""
+class ClassificationModel(NNModule[X_contra, Classification_Y], Protocol[X_contra]):
+    """
+    Represents a classification model.
+    """
 
 
 ERM_X: TypeAlias = torch.Tensor
@@ -94,10 +94,10 @@ A batch of images to classify.
 Shape: `(batch_size, num_channels, depth, height, width)`
 """
 
-ERMModel: TypeAlias = ClassificationModel[ERM_X]
-"""
-Represents a standard ERM (Empirical Risk Minimization) classifier for images.
-"""
+class ERMModel(ClassificationModel[ERM_X], Protocol):
+    """
+    Represents a standard ERM (Empirical Risk Minimization) classifier for images.
+    """
 
 
 class FAST_X(TypedDict):
@@ -115,7 +115,7 @@ class FAST_X(TypedDict):
     Shape: `(batch_size, num_channels, depth, height, width)`
     """
 
-FASTModel: TypeAlias = ClassificationModel[FAST_X]
-"""
-Represents a FAST (Front-door Adjustment via Neural Style Transfer) classifier for images.
-"""
+class FASTModel(ClassificationModel[FAST_X], Protocol):
+    """
+    Represents a FAST (Front-door Adjustment via Neural Style Transfer) classifier for images.
+    """
