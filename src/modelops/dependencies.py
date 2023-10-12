@@ -6,7 +6,8 @@ from typing import Protocol, TypeAlias, TypedDict, TypeVar
 import torch
 
 __all__ = [
-    'StyleTransfer_X', 'StyleTransfer_Y', 'StyleTransferModel',
+    'StyleTransfer_X', 'StyleTransfer_Y',
+    'AdaINEncoder', 'AdaINDecoder',
     'Classification_Y', 'ClassificationModel',
     'ERM_X', 'ERMModel',
     'FAST_X', 'FASTModel',
@@ -25,9 +26,9 @@ class NNModule(Protocol[X_contra, Y_co]):
     """
     A partial interface for :class:`torch.nn.Module`.
     """
-    def forward(self, x: X_contra) -> Y_co:
+    def __call__(self, x: X_contra) -> Y_co:
         """
-        Same as :meth:`torch.nn.Module.forward`.
+        Same as :meth:`torch.nn.Module.__call__`.
         """
         ...
 
@@ -60,10 +61,17 @@ A batch of style-transferred images.
 Shape: `(batch_size, num_classes)`
 """
 
-StyleTransferModel: TypeAlias = NNModule[StyleTransfer_X, StyleTransfer_Y]
-"""
-Represents a style transfer model for images.
-"""
+class AdaINEncoder(NNModule[torch.Tensor, torch.Tensor], Protocol):
+    def get_states(self, batch: torch.Tensor) -> list[torch.Tensor]:
+        """
+        Similar to :meth:`torch.nn.Module.__call__`, but returns the output of
+        each intermediate layer; the last output is the same as the result of
+        :meth:`torch.nn.Module.__call__`.
+        """
+        ...
+
+class AdaINDecoder(NNModule[torch.Tensor, torch.Tensor], Protocol):
+    pass
 
 
 Classification_Y: TypeAlias = torch.Tensor
