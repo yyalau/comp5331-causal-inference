@@ -105,10 +105,10 @@ class AdaINTask(BaseTask[tuple[StyleTransfer_X, StyleTransfer_Y], StyleTransfer_
             'style_loss': self._style_loss,
         }
 
-    def _content_loss(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def _content_loss_fn(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return F.mse_loss(input_, target)
 
-    def _style_loss(self, input_states: list[torch.Tensor], target_states: list[torch.Tensor]) -> torch.Tensor:
+    def _style_loss_fn(self, input_states: list[torch.Tensor], target_states: list[torch.Tensor]) -> torch.Tensor:
         std_loss, mean_loss = torch.tensor(0.0), torch.tensor(0.0)
 
         for input_state, target_state in zip(input_states, target_states):
@@ -120,9 +120,15 @@ class AdaINTask(BaseTask[tuple[StyleTransfer_X, StyleTransfer_Y], StyleTransfer_
 
         return mean_loss + std_loss
 
+    def _content_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], content: torch.Tensor) -> torch.Tensor:
+        return self._content_loss_fn(enc_applied_states[-1], content)
+
+    def _style_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], content: torch.Tensor) -> torch.Tensor:
+        return self._style_loss_fn(enc_applied_states, enc_style_states)
+
     def _combined_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], content: torch.Tensor) -> torch.Tensor:
-        content_loss = self._content_loss(enc_applied_states[-1], content)
-        style_loss = self._style_loss(enc_applied_states, enc_style_states)
+        content_loss = self._content_loss(enc_applied_states, enc_style_states, content)
+        style_loss = self._style_loss(enc_applied_states, enc_style_states, content)
         gamma = self.gamma
 
         return content_loss + gamma * style_loss
