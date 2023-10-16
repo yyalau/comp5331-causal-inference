@@ -20,7 +20,7 @@ from .dependencies import (
     FASTModel, FAST_X,
 )
 
-__all__ = ['ERMTask', 'FASTTask']
+__all__ = ['AdaINTask', 'ERMTask', 'FASTTask']
 
 
 Eval_X = TypeVar('Eval_X')                                  # For model evaluation
@@ -77,7 +77,7 @@ class BaseTask(pl.LightningModule, Generic[Eval_X, Infer_X, Infer_Y], ABC):
         return OptimizerLRSchedulerConfig(optimizer=optimizer, lr_scheduler=scheduler)
 
 
-class AdaINTask(BaseTask[tuple[StyleTransfer_X, StyleTransfer_Y], StyleTransfer_X, StyleTransfer_Y]):
+class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
     def __init__(
         self,
         encoder: AdaINEncoder,
@@ -139,8 +139,8 @@ class AdaINTask(BaseTask[tuple[StyleTransfer_X, StyleTransfer_Y], StyleTransfer_
 
         return style_std * (content - content_mean) / content_std + style_mean
 
-    def _eval_step(self, batch: tuple[StyleTransfer_X, StyleTransfer_Y], batch_idx: int) -> dict[str, torch.Tensor]:
-        x, _ = batch
+    def _eval_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+        x = batch
 
         enc_style_states = self.encoder.get_states(x['style'])
         enc_content = self.encoder(x['content'])
