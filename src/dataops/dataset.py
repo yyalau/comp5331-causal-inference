@@ -9,18 +9,22 @@ from enum import Enum
 import func
 import image
 import numpy as np
+import numpy.typing as npt
 import os
 from PIL import Image
 from pathlib import Path
 
 from torch.utils.data import Dataset
 import torch
-from typing import Self
+from typing import Self, TypeVar, List, Tuple
 
 
 from augmentation import RandAugment
 
-__all__ = ["ImageDataset", "PACSDataset", "DatasetPartition"]
+__all__ = ["ImageDataset", "PACSDataset", "DatasetPartition", "DatasetConfig"]
+
+
+Infer_X, Infer_Y = TypeVar('Infer_X'), TypeVar('Infer_Y')
 
 
 @dataclass(frozen=True)
@@ -28,11 +32,11 @@ class DatasetConfig:
     data_path: Path
     label_path: Path
     lazy: bool
-    domains: list[str]
+    domains: List[str]
     extension: str
     num_domains_to_sample: int
     num_ood_samples: int
-    rand_augment: tuple[float, float]
+    rand_augment: Tuple[float, float]
 
 
 class DatasetPartition(str, Enum):
@@ -43,11 +47,11 @@ class DatasetPartition(str, Enum):
 
 @dataclass
 class ImageDataLoader:
-    load: Callable[[], np.ndarray]
+    load: Callable[[], npt.NDArray[np.float32]]
     label: int
 
 
-class ImageDataset(Dataset, ABC):
+class ImageDataset(Dataset[torch.Tensor], ABC):
     def __init__(
             self,
             config: DatasetConfig,
@@ -77,7 +81,7 @@ class ImageDataset(Dataset, ABC):
 
     def collate_fn(
         self,
-        batch: Sequence[tuple[np.ndarray, int, str]]
+        batch: Sequence[Tuple[np.ndarray, int, str]]
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Collate and process a batch of samples.
@@ -151,7 +155,7 @@ class PACSDataset(ImageDataset):
     ) -> Self:
         raise NotImplementedError()
 
-    def _fetch_data(self) -> Mapping[str, Sequence[ImageDataLoader]]:
+    def _fetch_data(self) -> Mapping[str, MutableSequence[ImageDataLoader]]:
         data_root_path = self.config.data_path
         data_reference_path = self.config.label_path
         domain_labels = self.config.domains
@@ -175,7 +179,9 @@ class PACSDataset(ImageDataset):
 
         return referance_label_map
 
-    def _get_file_name(self, domain_name: str):
+    def _get_file_name(self, domain_name: str) -> str:
         extension = self.config.extension
         partition = self.partition
+        if partition is DatasetPartition.VALIDATE:
+            return "_".join([domain_name, "".join(["cross", partition, extension])])
         return "_".join([domain_name, "".join([partition, extension])])

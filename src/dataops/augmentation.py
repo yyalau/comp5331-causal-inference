@@ -1,5 +1,7 @@
 # code adapted from
 # https://github.com/ildoonet/pytorch-randaugment/blob/master/RandAugment/augmentations.py
+# type: ignore
+
 from __future__ import annotations
 
 import random
