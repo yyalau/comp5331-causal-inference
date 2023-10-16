@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence, MutableSequence
 import copy
@@ -16,16 +16,23 @@ from pathlib import Path
 
 from torch.utils.data import Dataset
 import torch
-from typing import Self, TypeVar, List, Tuple
+from typing import Self, List, Tuple
+
+from pydantic import BaseModel
 
 
 from augmentation import RandAugment
 
-__all__ = ["ImageDataset", "PACSDataset", "DatasetPartition", "DatasetConfig"]
+__all__ = ["ImageDataset", "PACSDataset", "DatasetPartition", "DatasetConfig", "DatasetOutput"]
 
 
-Infer_X, Infer_Y = TypeVar('Infer_X'), TypeVar('Infer_Y')
+class DatasetOutput(BaseModel):
+    image_tensor: torch.Tensor
+    label: int
+    domain: str
 
+    class Config:
+        arbitrary_types_allowed = True
 
 @dataclass(frozen=True)
 class DatasetConfig:
@@ -51,7 +58,7 @@ class ImageDataLoader:
     label: int
 
 
-class ImageDataset(Dataset[torch.Tensor], ABC):
+class ImageDataset(Dataset[DatasetOutput]):
     def __init__(
             self,
             config: DatasetConfig,
@@ -67,7 +74,7 @@ class ImageDataset(Dataset[torch.Tensor], ABC):
         )
         self.transforms = RandAugment(*self.config.rand_augment)
 
-    def __getitem__(self, idx: int) -> tuple[np.ndarray, int, str]:
+    def __getitem__(self, idx: int) -> DatasetOutput:
         """
         Get the preprocessed item at the specified index.
 
@@ -76,13 +83,18 @@ class ImageDataset(Dataset[torch.Tensor], ABC):
         """
         domain, item = func.get_flattened_index(self.domain_data_map, idx)
         processed_image = self._preprocess(item.load())
+        image_tensor = torch.from_numpy(processed_image)
         label = item.label
-        return processed_image, label, domain
+        return DatasetOutput(
+            image_tensor=image_tensor,
+            label=label,
+            domain=domain
+        )
 
     def collate_fn(
         self,
-        batch: Sequence[Tuple[np.ndarray, int, str]]
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        batch: Sequence[DatasetOutput]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Collate and process a batch of samples.
         This method returns a data tensor of shape: \n
@@ -100,33 +112,38 @@ class ImageDataset(Dataset[torch.Tensor], ABC):
         num_ood_samples = self.config.num_ood_samples
 
         batch_data, batch_labels = [], []
-        for img, img_label, domain in batch:
-            data, labels = [img], [img_label]
+        for output in batch:
+            image_tensor = output.image_tensor
+            image_label = output.label
+            image_domain = output.domain
+            data, labels = [image_tensor], [image_label]
             ood_domain_list = func.sample_dictionary(
                 domain_data_map,
                 num_domains_to_sample,
-                lambda x: x != domain
+                lambda x: x != image_domain
             )
             for ood_domain in ood_domain_list:
-                samples = func.sample_sequence_and_remove_from_population(
+                sample_list = func.sample_sequence_and_remove_from_population(
                     domain_data_map[ood_domain],
                     num_ood_samples
                 )
-                data.extend(sample.load() for sample in samples)
-                labels.extend(sample.label for sample in samples)
+                for sample in sample_list:
+                    data.append(torch.from_numpy(sample.load()))
+                    labels.append(sample.label)
 
-            batch_data.append(data)
+            batch_data.append(torch.stack(data))
             batch_labels.append(labels)
 
-        return (
-            torch.from_numpy(np.array(batch_data)),
-            torch.from_numpy(np.array(batch_labels))
-        )
+        return torch.stack(batch_data), torch.from_numpy(np.array(batch_labels))
 
     def __len__(self) -> int:
         return self.len
 
-    def _preprocess(self, X) -> np.ndarray:
+    def _preprocess(
+        self,
+        X: npt.NDArray[np.float32]
+    ) -> npt.NDArray[np.float32]:
+
         image = Image.fromarray(X)
         return np.array(self.transforms(image))
 

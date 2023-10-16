@@ -41,10 +41,11 @@ def sample_sequence_and_remove_from_population(
 
     """
     sample_indices = random.sample(list(range(len(sequence))), num_samples)
-    for idx in sample_indices:
-        del sequence[idx]
-    return [sequence[i] for i in sample_indices]
+    samples = [sequence[i] for i in sample_indices]
+    for idx in sorted(sample_indices, reverse=True):
+        sequence.pop(idx)
 
+    return samples
 
 def sample_dictionary(
     dictionary: Mapping[U, Any],
