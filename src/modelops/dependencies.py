@@ -58,7 +58,7 @@ StyleTransfer_Y: TypeAlias = torch.Tensor
 """
 A batch of style-transferred images.
 
-Shape: `(batch_size, num_classes)`
+Shape: `(batch_size, num_channels, depth, height, width)`
 """
 
 class AdaINEncoder(NNModule[torch.Tensor, torch.Tensor], Protocol):
