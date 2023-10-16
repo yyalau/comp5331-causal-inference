@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from augmentation import RandAugment
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence, MutableSequence
 import copy
@@ -13,15 +14,12 @@ import numpy.typing as npt
 import os
 from PIL import Image
 from pathlib import Path
+from pydantic import BaseModel
 
 from torch.utils.data import Dataset
 import torch
 from typing import Self, List, Tuple
 
-from pydantic import BaseModel
-
-
-from augmentation import RandAugment
 
 __all__ = ["ImageDataset", "PACSDataset", "DatasetPartition", "DatasetConfig", "DatasetOutput"]
 
