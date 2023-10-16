@@ -4,7 +4,7 @@ from typing import Generic, TypeVar
 
 from torch import Tensor
 import torch.nn as nn
-from torchvision.models import resnet18
+# from torchvision.models import resnet18
 from torchvision.transforms import Normalize
 
 from modelops.dependencies import ClassificationModel, FAST_X, Classification_Y
@@ -18,7 +18,6 @@ Classification_Output = TypeVar('Classification_Output', bound=Classification_Y)
 class FAST(nn.Module, Generic[Classification_Output]):
     def __init__(self,
                 classifer: ClassificationModel[FAST_X],
-                model = resnet18,
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
                 eta: float = 2.0, # namda ~ U(0,eta) eta controlling the maximum style mixing rate
                 beta: float = 0.2, # interpolation coefficient
@@ -31,7 +30,6 @@ class FAST(nn.Module, Generic[Classification_Output]):
 
         self.style_transfer = fourierMix(eta).to(device)
         self.classifier = classifer
-        self.model = model
         self.beta = beta
         self.normalization = Normalize(mean = pixel_mean, std = pixel_std)
 
@@ -44,13 +42,12 @@ class FAST(nn.Module, Generic[Classification_Output]):
         fx_hats = []
         for x_prime in styles:
             x_hat = self.style_transfer(content, x_prime)
-            fx_hat = self.model(self.normalization(x_hat))
+            fx_hat = self.classifier(self.normalization(x_hat))
             fx_hats.append(fx_hat)
-        fx = self.model(self.normalization(content))
+        fx = self.classifier(self.normalization(content))
         weighted_output = fx*self.beta+(1-self.beta)*sum(fx_hats)/len(fx_hats)
 
-        classifier_input: FAST_X = {'content': weighted_output, 'styles': styles}
-        predictions: Classification_Output = self.classifier(classifier_input)
+        predictions: Classification_Output = weighted_output
 
         return predictions
 
