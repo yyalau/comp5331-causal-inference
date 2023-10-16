@@ -19,14 +19,6 @@
 | 20942785 | BAHARI, Maral | Main framework |
 | 20943026 | BA SOWID, Badr Saleh Abdullah | Data config / preprocessing |
 
-## Tasks
-
-- Data config / preprocessing (1)
-- Main framework (2)
-- NST model (1)
-- Classifier model (1)
-- Data visualization / traineval (1)
-
 ## Installation
 
 ### Requirements
@@ -38,18 +30,35 @@
 
 1. Activate a virtual Python environment (e.g. [conda](https://docs.conda.io/en/latest/)).
 2. Install the dependencies.
-```
-python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+```sh
+python -m pip install torch==2.1.* torchvision==0.16.* torchaudio==2.1.* --index-url https://download.pytorch.org/whl/cu118
 python -m pip install -r requirements.txt
-```
-3. Download the datasets.
-```
-# Download to data/
 ```
 
 ## Usage
 
-TBD
+### Baseline Method
+
+1. Train a standard ERM (Empirical Risk Minimization) classifier:
+```sh
+# By default, checkpoints are stored in `./experiments/erm`
+python run_erm.py [OPTIONS]
+```
+
+### Proposed Method
+
+1. *(Optional)* Train a NST (Neural Style Transfer) model:
+```sh
+# By default, checkpoints are stored in `./experiments/nst`
+python run_nst.py [OPTIONS]
+```
+
+2. Train a FAST (Front-door Adjustment via Neural Style Transfer) classifier:
+```sh
+# You can use the NST model from Step 1 or download a pretrained one
+# By default, checkpoints are stored in `./experiments/fast`
+python run_fast.py [OPTIONS]
+```
 
 ## References
 
