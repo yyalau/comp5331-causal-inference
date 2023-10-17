@@ -4,7 +4,6 @@ from abc import abstractmethod
 from augmentation import RandAugment
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence, MutableSequence
-import copy
 from dataclasses import dataclass
 from enum import Enum
 import func
@@ -18,7 +17,7 @@ from pydantic import BaseModel
 
 from torch.utils.data import Dataset
 import torch
-from typing import Self, List, Tuple
+from typing import Self, Tuple
 
 
 __all__ = ["ImageDataset", "PACSDataset", "DatasetPartition", "DatasetConfig", "DatasetOutput"]
@@ -32,15 +31,13 @@ class DatasetOutput(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+
 @dataclass(frozen=True)
 class DatasetConfig:
     data_path: Path
     label_path: Path
+    domains: Sequence[str]
     lazy: bool
-    domains: List[str]
-    extension: str
-    num_domains_to_sample: int
-    num_ood_samples: int
     rand_augment: Tuple[float, float]
 
 
@@ -89,51 +86,6 @@ class ImageDataset(Dataset[DatasetOutput]):
             domain=domain
         )
 
-    def collate_fn(
-        self,
-        batch: Sequence[DatasetOutput]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Collate and process a batch of samples.
-        This method returns a data tensor of shape: \n
-        `[batch_size, (N*k)+1, height, width, channels]` \n
-        and a label tensor of shape: \n
-        `[batch_size, (N*k)+1]` \n
-        where N is the number of domains that have been sampled, K is the
-        number of data objects sampled from the domain and the loaded data
-        object which is the first index in both the data tensor and the label
-        tensor.
-        """
-
-        domain_data_map = copy.deepcopy(self.domain_data_map)
-        num_domains_to_sample = self.config.num_domains_to_sample
-        num_ood_samples = self.config.num_ood_samples
-
-        batch_data, batch_labels = [], []
-        for output in batch:
-            image_tensor = output.image_tensor
-            image_label = output.label
-            image_domain = output.domain
-            data, labels = [image_tensor], [image_label]
-            ood_domain_list = func.sample_dictionary(
-                domain_data_map,
-                num_domains_to_sample,
-                lambda x: x != image_domain
-            )
-            for ood_domain in ood_domain_list:
-                sample_list = func.sample_sequence_and_remove_from_population(
-                    domain_data_map[ood_domain],
-                    num_ood_samples
-                )
-                for sample in sample_list:
-                    data.append(torch.from_numpy(sample.load()))
-                    labels.append(sample.label)
-
-            batch_data.append(torch.stack(data))
-            batch_labels.append(labels)
-
-        return torch.stack(batch_data), torch.from_numpy(np.array(batch_labels))
-
     def __len__(self) -> int:
         return self.len
 
@@ -152,6 +104,8 @@ class ImageDataset(Dataset[DatasetOutput]):
     def num_domains(self) -> int:
         return len(self.domain_data_map.keys())
 
+    def get_domain_data(self) -> Mapping[str, MutableSequence[ImageDataLoader]]:
+        return self.domain_data_map
 
 class PACSDataset(ImageDataset):
 
@@ -195,8 +149,7 @@ class PACSDataset(ImageDataset):
         return referance_label_map
 
     def _get_file_name(self, domain_name: str) -> str:
-        extension = self.config.extension
         partition = self.partition
         if partition is DatasetPartition.VALIDATE:
-            return "_".join([domain_name, "".join(["cross", partition, extension])])
-        return "_".join([domain_name, "".join([partition, extension])])
+            return "_".join([domain_name, "".join(["cross", partition, "_kfold.txt"])])
+        return "_".join([domain_name, "".join([partition, "_kfold.txt"])])
