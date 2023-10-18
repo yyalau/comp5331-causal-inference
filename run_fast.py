@@ -4,8 +4,8 @@ from pathlib import Path
 
 from lightning.pytorch.cli import LightningCLI
 
-# from src.dataops.datamodules import FASTDataModule
-from src.modelops.tasks import FASTTask
+# from src.datamodules.classification import FASTDataModule
+from src.tasks.classification import FASTTask
 
 def cli():
     experiment_name = 'fast'
