@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
+__all__ = ['create_image_loader']
 
 def cv2_loader(path: str) -> npt.NDArray[np.float32]:
     """

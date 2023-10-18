@@ -1,3 +1,5 @@
-from .dataset import ImageDataset
+from __future__ import annotations
 
-__all__ = ["ImageDataset"]
+from .dataset import ImageDataset, PACSDataset, OfficeHomeDataset, DigitsDGDataset
+
+__all__ = ["ImageDataset", "PACSDataset", "OfficeHomeDataset", "DigitsDGDataset"]

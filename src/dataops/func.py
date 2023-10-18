@@ -1,5 +1,6 @@
-from collections.abc import MutableSequence, Sequence
-from typing import Any, Callable, Mapping, Optional, TypeVar, Tuple
+from __future__ import annotations
+
+from typing import Any, Callable, Mapping, Optional, TypeVar, Tuple, List
 import random
 
 U = TypeVar('U')
@@ -7,7 +8,7 @@ V = TypeVar('V')
 
 
 def get_flattened_index(
-    dictionary: Mapping[U, Sequence[V]],
+    dictionary: Mapping[U, List[V]],
     index: int
 ) -> Tuple[U, V]:
     """
@@ -28,9 +29,9 @@ def get_flattened_index(
 
 
 def sample_sequence_and_remove_from_population(
-    sequence: MutableSequence[V],
+    sequence: List[V],
     num_samples: int
-) -> Sequence[V]:
+) -> List[V]:
 
     """
     Sample elements from a sequence and deletes the elements from that
@@ -51,7 +52,7 @@ def sample_dictionary(
     dictionary: Mapping[U, Any],
     num_samples: int,
     predicate: Optional[Callable[[U], bool]]
-) -> Sequence[U]:
+) -> List[U]:
     """
     Sample keys from a dictionary based on predicate.
 

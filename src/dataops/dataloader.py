@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from dataclasses import dataclass
 from dataset import (
@@ -8,13 +10,13 @@ from dataset import (
     DatasetOutput,
 )
 from enum import Enum
-import func
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from typing import Tuple
+from typing import Tuple, List
 
-from collections.abc import Sequence
+from .func import sample_dictionary, sample_sequence_and_remove_from_population
+
 
 
 class Dataset(Enum):
@@ -34,7 +36,7 @@ class OODDataLoader(DataLoader[DatasetOutput]):
     def __init__(
             self,
             config: DataLoaderConfig,
-            dataset: ImageDataset
+            dataset: ImageDataset,
     ) -> None:
         self.config = config
         super(OODDataLoader, self).__init__(
@@ -46,7 +48,7 @@ class OODDataLoader(DataLoader[DatasetOutput]):
         )
 
     def collate(
-        self, batch: Sequence[DatasetOutput]
+        self, batch: List[DatasetOutput]
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Collate and process a batch of samples.
@@ -59,6 +61,7 @@ class OODDataLoader(DataLoader[DatasetOutput]):
         object which is the first index in both the data tensor and the label
         tensor.
         """
+        assert isinstance(self.dataset, ImageDataset)
 
         domain_data_map = copy.deepcopy(self.dataset.get_domain_data())
         num_domains_to_sample = self.config.num_domains_to_sample
@@ -70,11 +73,11 @@ class OODDataLoader(DataLoader[DatasetOutput]):
             image_label = output.label
             image_domain = output.domain
             data, labels = [image_tensor], [image_label]
-            ood_domain_list = func.sample_dictionary(
+            ood_domain_list = sample_dictionary(
                 domain_data_map, num_domains_to_sample, lambda x: x != image_domain
             )
             for ood_domain in ood_domain_list:
-                sample_list = func.sample_sequence_and_remove_from_population(
+                sample_list = sample_sequence_and_remove_from_population(
                     domain_data_map[ood_domain], num_ood_samples
                 )
                 for sample in sample_list:
@@ -110,24 +113,26 @@ def create_dataset(
     raise NotImplementedError()
 
 
-config = DatasetConfig(
-    data_path="../../data/pacs/pacs_data",
-    label_path="../../data/pacs/Train val splits and h5py files pre-read",
-    domains=["art_painting", "cartoon", "photo"],
-    lazy=True,
-    rand_augment=(10, 10),
-)
+# config = DatasetConfig(
+#     data_path="../../data/pacs/pacs_data",
+#     label_path="../../data/pacs/Train val splits and h5py files pre-read",
+#     domains=["art_painting", "cartoon", "photo"],
+#     lazy=True,
+#     rand_augment=(10, 10),
+# )
 
-loader_config = DataLoaderConfig(
-    batch_size=10,
-    shuffle=True,
-    num_workers=4,
-    num_domains_to_sample=1,
-    num_ood_samples=10
-)
+# loader_config = DataLoaderConfig(
+#     batch_size=10,
+#     shuffle=True,
+#     num_workers=4,
+#     num_domains_to_sample=1,
+#     num_ood_samples=10
+# )
 
-train, test, val = create_data_loaders(loader_config, config, Dataset.PACS)
+# train, test, val = create_data_loaders(loader_config, config, Dataset.PACS)
 
 
-for i, (X, Y) in enumerate(train):
-    print(i)
+# for i, (X, Y) in enumerate(train):
+#     print(i)
+
+
