@@ -4,7 +4,7 @@ from pathlib import Path
 
 from lightning.pytorch.cli import LightningCLI
 
-# from src.datamodules.classification import FADataModule
+from src.datamodules.classification import FADataModule
 from src.tasks.classification import FATask
 
 def cli():
@@ -13,7 +13,7 @@ def cli():
 
     LightningCLI(
         model_class=FATask,
-        # datamodule_class=FADataModule,
+        datamodule_class=FADataModule,
         trainer_defaults={
             'logger': {
                 'class_path': 'TensorBoardLogger',

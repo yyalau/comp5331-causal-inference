@@ -4,5 +4,7 @@ einops==0.7.*
 opencv-python==4.8.*
 lightning[pytorch-extra]==2.0.*
 
+click==8.1.*
+
 flake8==6.1.*
 pyright==1.1.*
