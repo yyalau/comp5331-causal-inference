@@ -1,12 +1,21 @@
+import copy
 from dataclasses import dataclass
-from dataset import ImageDataset, DatasetConfig, PACSDataset, DatasetPartition
+from dataset import (
+    ImageDataset,
+    DatasetConfig,
+    PACSDataset,
+    DatasetPartition,
+    DatasetOutput,
+)
 from enum import Enum
+import func
+import numpy as np
+import torch
 from torch.utils.data import DataLoader
-from typing import TypeVar
+from typing import Tuple
 
+from collections.abc import Sequence
 
-T = TypeVar('T')
-ImageDataLoader = DataLoader[ImageDataset]
 
 class Dataset(Enum):
     PACS = 1
@@ -16,44 +25,109 @@ class Dataset(Enum):
 class DataLoaderConfig:
     batch_size: int
     shuffle: bool
+    num_workers: int
+    num_domains_to_sample: int
+    num_ood_samples: int
+
+
+class OODDataLoader(DataLoader[DatasetOutput]):
+    def __init__(
+            self,
+            config: DataLoaderConfig,
+            dataset: ImageDataset
+    ) -> None:
+        self.config = config
+        super(OODDataLoader, self).__init__(
+            dataset=dataset,
+            batch_size=config.batch_size,
+            shuffle=config.shuffle,
+            num_workers=config.num_workers,
+            collate_fn=self.collate
+        )
+
+    def collate(
+        self, batch: Sequence[DatasetOutput]
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Collate and process a batch of samples.
+        This method returns a data tensor of shape: \n
+        `[batch_size, (N*k)+1, height, width, channels]` \n
+        and a label tensor of shape: \n
+        `[batch_size, (N*k)+1]` \n
+        where N is the number of domains that have been sampled, K is the
+        number of data objects sampled from the domain and the loaded data
+        object which is the first index in both the data tensor and the label
+        tensor.
+        """
+
+        domain_data_map = copy.deepcopy(self.dataset.get_domain_data())
+        num_domains_to_sample = self.config.num_domains_to_sample
+        num_ood_samples = self.config.num_ood_samples
+
+        batch_data, batch_labels = [], []
+        for output in batch:
+            image_tensor = output.image_tensor
+            image_label = output.label
+            image_domain = output.domain
+            data, labels = [image_tensor], [image_label]
+            ood_domain_list = func.sample_dictionary(
+                domain_data_map, num_domains_to_sample, lambda x: x != image_domain
+            )
+            for ood_domain in ood_domain_list:
+                sample_list = func.sample_sequence_and_remove_from_population(
+                    domain_data_map[ood_domain], num_ood_samples
+                )
+                for sample in sample_list:
+                    data.append(torch.from_numpy(sample.load()))
+                    labels.append(sample.label)
+
+            batch_data.append(torch.stack(data))
+            batch_labels.append(labels)
+        return torch.stack(batch_data), torch.from_numpy(np.array(batch_labels))
+
 
 def create_data_loaders(
-        dataloader_config: DataLoaderConfig,
-        dataset_config: DatasetConfig,
-        dataset: Dataset
-) -> tuple[ImageDataLoader, ImageDataLoader, ImageDataLoader]:
+    dataloader_config: DataLoaderConfig,
+    dataset_config: DatasetConfig,
+    dataset: Dataset
+) -> Tuple[OODDataLoader, ...]:
 
-    batch_size = dataloader_config.batch_size
-    shuffle = dataloader_config.shuffle
+    return tuple(
+        OODDataLoader(dataloader_config, dataset)
+        for dataset in create_dataset(dataset_config, dataset)
+    )
 
-    train_set, test_set, val_set = create_dataset(dataset_config, dataset)
-    train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=shuffle)
-    test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=shuffle)
-    val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=shuffle)
-    return train_loader, test_loader, val_loader
 
-def create_dataset(dataset_config: DatasetConfig, dataset: Dataset):
+def create_dataset(
+    dataset_config: DatasetConfig, dataset: Dataset
+) -> Tuple[ImageDataset, ...]:
     if dataset is Dataset.PACS:
-        train = PACSDataset(dataset_config, DatasetPartition.TRAIN)
-        test = PACSDataset(dataset_config, DatasetPartition.TEST)
-        val = PACSDataset(dataset_config, DatasetPartition.VALIDATE)
-        return train, test, val
+        return tuple(
+            PACSDataset(dataset_config, partition)
+            for partition in DatasetPartition
+        )
+
+    raise NotImplementedError()
 
 
 config = DatasetConfig(
-data_path="../../data/pacs/pacs_data",
-label_path="../../data/pacs/Train val splits and h5py files pre-read",
-lazy=True,
-domains=["art_painting", "cartoon", "photo"],
-extension="_kfold.txt",
-num_domains_to_sample=1,
-num_ood_samples=3,
-rand_augment=(10, 10)
+    data_path="../../data/pacs/pacs_data",
+    label_path="../../data/pacs/Train val splits and h5py files pre-read",
+    domains=["art_painting", "cartoon", "photo"],
+    lazy=True,
+    rand_augment=(10, 10),
 )
 
 loader_config = DataLoaderConfig(
-batch_size=10,
-shuffle= True
+    batch_size=10,
+    shuffle=True,
+    num_workers=4,
+    num_domains_to_sample=1,
+    num_ood_samples=10
 )
 
 train, test, val = create_data_loaders(loader_config, config, Dataset.PACS)
+
+
+for i, (X, Y) in enumerate(train):
+    print(i)
