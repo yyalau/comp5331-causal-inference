@@ -8,7 +8,7 @@ from torch import nn
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
-from .base import ERMModel
+from .base import ERM_X, ERMModel
 
 __all__ = ['ViT']
 
@@ -137,7 +137,7 @@ class ViT(nn.Module, ERMModel):
 
         self.mlp_head = nn.Linear(dim, num_classes)
 
-    def forward(self, img: torch.Tensor):
+    def forward(self, img: ERM_X):
         x = self.to_patch_embedding(img)
         b, n, _ = x.shape
 

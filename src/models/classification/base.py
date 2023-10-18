@@ -16,7 +16,6 @@ A batch of class probabilities.
 Shape: `(batch_size, num_classes)`
 """
 
-
 class ClassificationModel(NNModule[X_contra, Classification_Y], Protocol[X_contra]):
     """
     Represents a classification model.

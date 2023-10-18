@@ -6,17 +6,17 @@ import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-from ....models.classification.fa import FAST_X, FASTModel
+from ...models.classification.fa import FA_X, FAModel
 
-from ..base import ClassificationTask
+from .base import ClassificationTask
 
-__all__ = ['FASTTask', 'FAST_X']
+__all__ = ['FATask', 'FA_X']
 
 
-class FASTTask(ClassificationTask[FAST_X]):
+class FATask(ClassificationTask[FA_X]):
     def __init__(
         self,
-        classifier: FASTModel,
+        classifier: FAModel,
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],

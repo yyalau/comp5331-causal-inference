@@ -7,10 +7,9 @@ from torch.nn import functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-from ...models.nst import AdaINDecoder, AdaINEncoder
+from ...models.nst import StyleTransfer_X, StyleTransfer_Y, AdaINDecoder, AdaINEncoder
 
 from ..base import BaseTask
-from .base import StyleTransfer_X, StyleTransfer_Y
 
 __all__ = ['AdaINTask', 'StyleTransfer_X', 'StyleTransfer_Y']
 

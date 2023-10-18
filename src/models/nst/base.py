@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import TypeAlias, TypedDict
+from typing import Protocol, TypeAlias, TypedDict
 
 import torch
 
-__all__ = ['StyleTransfer_X', 'StyleTransfer_Y']
+from ..base import NNModule
+
+__all__ = ['StyleTransfer_X', 'StyleTransfer_Y', 'StyleTransferModel']
 
 
 class StyleTransfer_X(TypedDict):
@@ -28,3 +30,8 @@ A batch of style-transferred images.
 
 Shape: `(batch_size, num_channels, depth, height, width)`
 """
+
+class StyleTransferModel(NNModule[StyleTransfer_X, StyleTransfer_Y], Protocol):
+    """
+    Represents a style transfer model for images.
+    """

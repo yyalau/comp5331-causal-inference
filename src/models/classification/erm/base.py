@@ -4,9 +4,9 @@ from typing import Protocol, TypeAlias
 
 import torch
 
-from ..base import ClassificationModel
+from ..base import ClassificationModel, Classification_Y
 
-__all__ = ['ERM_X', 'ERMModel']
+__all__ = ['ERM_X', 'Classification_Y', 'ERMModel']
 
 
 ERM_X: TypeAlias = torch.Tensor
