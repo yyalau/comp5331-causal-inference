@@ -4,7 +4,7 @@ from typing import Protocol, TypedDict
 
 import torch
 
-from .base import ClassificationModel
+from ..base import ClassificationModel
 
 __all__ = ['FAST_X', 'FASTModel']
 

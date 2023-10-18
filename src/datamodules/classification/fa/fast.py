@@ -4,7 +4,7 @@ from typing import Protocol
 
 from torch.utils.data import DataLoader
 
-from ...tasks.classification import FAST_X, Classification_Y
+from ....tasks.classification import FAST_X, Classification_Y
 
 __all__ = ['FASTDataModule']
 

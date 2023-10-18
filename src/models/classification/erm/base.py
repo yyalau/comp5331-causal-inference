@@ -4,7 +4,7 @@ from typing import Protocol, TypeAlias
 
 import torch
 
-from .base import ClassificationModel
+from ..base import ClassificationModel
 
 __all__ = ['ERM_X', 'ERMModel']
 

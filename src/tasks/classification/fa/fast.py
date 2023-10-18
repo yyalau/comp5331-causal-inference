@@ -6,9 +6,9 @@ import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-from ...models.classification import FAST_X, FASTModel
+from ....models.classification.fa import FAST_X, FASTModel
 
-from .base import ClassificationTask
+from ..base import ClassificationTask
 
 __all__ = ['FASTTask', 'FAST_X']
 
