@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
+
+__all__ = ['TransformerNet']
 
 
 class TransformerNet(torch.nn.Module):
@@ -33,7 +36,8 @@ class TransformerNet(torch.nn.Module):
         # Non-linearities
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
-    def forward(self, X):
+
+    def forward(self, X: torch.Tensor):
         in_X = X
         y = self.relu(self.in1(self.conv1(in_X)))
         y = self.relu(self.in2(self.conv2(y)))
@@ -46,18 +50,18 @@ class TransformerNet(torch.nn.Module):
         y = self.relu(self.in4(self.deconv1(y)))
         y = self.relu(self.in5(self.deconv2(y)))
         y = self.deconv3(y)
-        #y = (self.tanh(y)+1)*127.5
+        # y = (self.tanh(y)+1)*127.5
         return y
 
 
 class ConvLayer(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, stride: int):
         super(ConvLayer, self).__init__()
         reflection_padding = int(np.floor(kernel_size / 2))
         self.reflection_pad = nn.ReflectionPad2d(reflection_padding)
         self.conv2d = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         out = self.reflection_pad(x)
         out = self.conv2d(out)
         return out
@@ -69,7 +73,7 @@ class ResidualBlock(torch.nn.Module):
     recommended architecture: http://torch.ch/blog/2016/02/04/resnets.html
     """
 
-    def __init__(self, channels):
+    def __init__(self, channels: int):
         super(ResidualBlock, self).__init__()
         self.conv1 = ConvLayer(channels, channels, kernel_size=3, stride=1)
         self.in1 = InstanceNormalization(channels)
@@ -77,7 +81,7 @@ class ResidualBlock(torch.nn.Module):
         self.in2 = InstanceNormalization(channels)
         self.relu = nn.ReLU()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         residual = x
         out = self.relu(self.in1(self.conv1(x)))
         out = self.in2(self.conv2(out))
@@ -92,7 +96,7 @@ class UpsampleConvLayer(torch.nn.Module):
     ref: http://distill.pub/2016/deconv-checkerboard/
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride, upsample=None):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, stride: int, upsample: int | None = None):
         super(UpsampleConvLayer, self).__init__()
         self.upsample = upsample
         if upsample:
@@ -101,7 +105,7 @@ class UpsampleConvLayer(torch.nn.Module):
         self.reflection_pad = nn.ReflectionPad2d(reflection_padding)
         self.conv2d = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x_in = x
         if self.upsample:
             x_in = self.upsample_layer(x_in)
@@ -116,7 +120,7 @@ class InstanceNormalization(torch.nn.Module):
     ref: https://arxiv.org/pdf/1607.08022.pdf
     """
 
-    def __init__(self, dim, eps=1e-9):
+    def __init__(self, dim: int, eps: float = 1e-9):
         super(InstanceNormalization, self).__init__()
         self.scale = nn.Parameter(torch.FloatTensor(dim))
         self.shift = nn.Parameter(torch.FloatTensor(dim))
@@ -127,7 +131,7 @@ class InstanceNormalization(torch.nn.Module):
         self.scale.data.uniform_()
         self.shift.data.zero_()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         n = x.size(2) * x.size(3)
         t = x.view(x.size(0), x.size(1), n)
         mean = torch.mean(t, 2).unsqueeze(2).unsqueeze(3).expand_as(x)
@@ -140,4 +144,3 @@ class InstanceNormalization(torch.nn.Module):
         out = (x - mean) / torch.sqrt(var + self.eps)
         out = out * scale_broadcast + shift_broadcast
         return out
-    

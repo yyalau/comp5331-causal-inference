@@ -4,8 +4,8 @@ from pathlib import Path
 
 from lightning.pytorch.cli import LightningCLI
 
-# from src.dataops.datamodules import AdaINDataModule
-from src.modelops.tasks import AdaINTask
+# from src.datamodules.nst import AdaINDataModule
+from src.tasks.nst import AdaINTask
 
 def cli():
     experiment_name = 'nst'

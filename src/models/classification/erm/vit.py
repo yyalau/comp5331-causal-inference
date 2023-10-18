@@ -1,18 +1,29 @@
+from __future__ import annotations
+
+from typing import Literal, TypeAlias, TypeVar
+
 import torch
 from torch import nn
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
+from .base import ERMModel
+
+__all__ = ['ViT']
+
 # helpers
 
-def pair(t):
+T = TypeVar('T', int, float)
+MaybePair: TypeAlias = T | tuple[T, T]
+
+def pair(t: MaybePair[T]) -> tuple[T, T]:
     return t if isinstance(t, tuple) else (t, t)
 
 # classes
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout = 0.):
+    def __init__(self, dim: int, hidden_dim: int, dropout: float = 0.):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
@@ -23,13 +34,13 @@ class FeedForward(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64, dropout = 0.):
+    def __init__(self, dim: int, heads: int = 8, dim_head: int = 64, dropout: float = 0.):
         super().__init__()
-        inner_dim = dim_head *  heads
+        inner_dim = dim_head * heads
         project_out = not (heads == 1 and dim_head == dim)
 
         self.heads = heads
@@ -47,7 +58,7 @@ class Attention(nn.Module):
             nn.Dropout(dropout)
         ) if project_out else nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x = self.norm(x)
 
         qkv = self.to_qkv(x).chunk(3, dim = -1)
@@ -63,7 +74,7 @@ class Attention(nn.Module):
         return self.to_out(out)
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim: int, depth: int, heads: int, dim_head: int, mlp_dim: int, dropout: float = 0.):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.layers = nn.ModuleList([])
@@ -73,16 +84,32 @@ class Transformer(nn.Module):
                 FeedForward(dim, mlp_dim, dropout = dropout)
             ]))
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         for attn, ff in self.layers:
             x = attn(x) + x
             x = ff(x) + x
 
         return self.norm(x)
 
-class ViT(nn.Module):
-    def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0.):
+class ViT(nn.Module, ERMModel):
+    def __init__(
+        self,
+        *,
+        image_size: MaybePair[int],
+        patch_size: MaybePair[int],
+        num_classes: int,
+        dim: int,
+        depth: int,
+        heads: int,
+        mlp_dim: int,
+        pool: Literal['cls', 'mean'] = 'cls',
+        channels: int = 3,
+        dim_head: int = 64,
+        dropout: float = 0.,
+        emb_dropout: float = 0.,
+    ):
         super().__init__()
+
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
 
@@ -110,7 +137,7 @@ class ViT(nn.Module):
 
         self.mlp_head = nn.Linear(dim, num_classes)
 
-    def forward(self, img):
+    def forward(self, img: torch.Tensor):
         x = self.to_patch_embedding(img)
         b, n, _ = x.shape
 

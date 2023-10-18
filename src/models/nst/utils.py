@@ -30,9 +30,9 @@ def tensor_save_rgbimage(tensor, filename, cuda=False):
     img.save(filename)
 
 
-  
-    
-    
+
+
+
 def tensor_save_bgrimage(tensor, filename, cuda=False):
     (b, g, r) = torch.chunk(tensor, 3)
     tensor = torch.cat((r, g, b))
@@ -47,9 +47,9 @@ def tensor_return_bgrimage(tensor, cuda=False):
         img = tensor.clone().clamp(0, 255).numpy()
     print(img.shape)
     img = img.transpose(1, 2, 0).astype('uint8')
-    print("one",img)
+    print("one", img)
     img = Image.fromarray(img)
-    print("two",img)
+    print("two", img)
     return img
 
 
@@ -72,7 +72,7 @@ def subtract_imagenet_mean_batch(batch):
 
 def subtract_mean_std_batch(batch):
     tensortype = type(batch.data)
-    batch=batch.div(255)
+    batch = batch.div(255)
     mean = tensortype(batch.data.size())
     mean[:, 0, :, :] = 0.485
     mean[:, 1, :, :] = 0.456
@@ -83,8 +83,8 @@ def subtract_mean_std_batch(batch):
     std[:, 1, :, :] = 0.224
     std[:, 2, :, :] = 0.225
     batch = batch.div(Variable(std))
-    return batch    
-    
+    return batch
+
 
 def preprocess_batch(batch):
     batch = batch.transpose(0, 1)
@@ -92,7 +92,7 @@ def preprocess_batch(batch):
     batch = torch.cat((b, g, r))
     batch = batch.transpose(0, 1)
     return batch
-    
+
 def depreprocess_batch(batch):
     batch = batch.transpose(0, 1)
     (b, g, r) = torch.chunk(batch, 3)
