@@ -15,7 +15,7 @@ import torch
 from torch.utils.data import DataLoader
 from typing import Tuple, List
 
-from .func import sample_dictionary, sample_sequence_and_remove_from_population
+from func import sample_dictionary, sample_sequence_and_remove_from_population
 
 
 
@@ -113,24 +113,25 @@ def create_dataset(
     raise NotImplementedError()
 
 
-# config = DatasetConfig(
-#     data_path="../../data/pacs/pacs_data",
-#     label_path="../../data/pacs/Train val splits and h5py files pre-read",
-#     domains=["art_painting", "cartoon", "photo"],
-#     lazy=True,
-#     rand_augment=(10, 10),
-# )
+config = DatasetConfig(
+    data_path="../../data/pacs/pacs_data",
+    label_path="../../data/pacs/Train val splits and h5py files pre-read",
+    train_val_domains=["art_painting", "cartoon", "photo"],
+    test_domains=["sketch", "art_painting", "cartoon"],
+    lazy=False,
+    rand_augment=(10, 10),
+)
 
-# loader_config = DataLoaderConfig(
-#     batch_size=10,
-#     shuffle=True,
-#     num_workers=4,
-#     num_domains_to_sample=1,
-#     num_ood_samples=10
-# )
+loader_config = DataLoaderConfig(
+    batch_size=10,
+    shuffle=True,
+    num_workers=4,
+    num_domains_to_sample=1,
+    num_ood_samples=10
+)
 
-# train, test, val = create_data_loaders(loader_config, config, Dataset.PACS)
+train, test, val = create_data_loaders(loader_config, config, Dataset.PACS)
 
 
-# for i, (X, Y) in enumerate(train):
-#     print(i)
+for i, (X, Y) in enumerate(test):
+    print(i)
