@@ -11,6 +11,7 @@ __all__ = [
     'Classification_Y', 'ClassificationModel',
     'ERM_X', 'ERMModel',
     'FAST_X', 'FASTModel',
+    'ViT_X', 'ViTModel',
 ]
 
 
@@ -118,4 +119,16 @@ class FAST_X(TypedDict):
 class FASTModel(ClassificationModel[FAST_X], Protocol):
     """
     Represents a FAST (Front-door Adjustment via Neural Style Transfer) classifier for images.
+    """
+
+ViT_X: TypeAlias = torch.Tensor
+"""
+A batch of images to classify.
+
+Shape: `(batch_size, num_channels, depth, height, width)`
+"""
+
+class ViTModel(ClassificationModel[ViT_X], Protocol):
+    """
+    Represents a standard ERM (Empirical Risk Minimization) classifier for images.
     """

@@ -18,9 +18,11 @@ from .dependencies import (
     ClassificationModel, Classification_Y,
     ERMModel, ERM_X,
     FASTModel, FAST_X,
+    ViT_X, ViTModel,
+
 )
 
-__all__ = ['AdaINTask', 'ERMTask', 'FASTTask']
+__all__ = ['AdaINTask', 'ERMTask', 'FASTTask', 'ViTTask']
 
 
 Eval_X = TypeVar('Eval_X')                                  # For model evaluation
@@ -216,6 +218,20 @@ class FASTTask(ClassificationTask[FAST_X]):
     def __init__(
         self,
         classifier: FASTModel,
+        *,
+        optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
+        scheduler: Callable[[Optimizer], LRScheduler],
+    ) -> None:
+        super().__init__(
+            classifier=classifier,
+            optimizer=optimizer,
+            scheduler=scheduler,
+        )
+
+class ViTTask(ClassificationTask[ViT_X]):
+    def __init__(
+        self,
+        classifier: ViTModel,
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
