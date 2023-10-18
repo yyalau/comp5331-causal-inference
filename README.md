@@ -53,11 +53,11 @@ python run_erm.py [OPTIONS]
 python run_nst.py [OPTIONS]
 ```
 
-2. Train a FAST (Front-door Adjustment via Neural Style Transfer) classifier:
+2. Train a FA (Front-door Adjustment) classifier:
 ```sh
 # You can use the NST model from Step 1 or download a pretrained one
-# By default, checkpoints are stored in `./experiments/fast`
-python run_fast.py [OPTIONS]
+# By default, checkpoints are stored in `./experiments/fa`
+python run_fa.py [OPTIONS]
 ```
 
 ## References

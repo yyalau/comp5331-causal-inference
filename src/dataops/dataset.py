@@ -25,8 +25,10 @@ from .augmentation import RandAugment
 from .utils import download_from_gdrive, unzip
 
 
-__all__ = ["ImageDataset", "PACSDataset", "DatasetPartition", 
-"DatasetConfig", "DatasetOutput", "OfficeHomeDataset", "DigitsDGDataset"]
+__all__ = [
+    "ImageDataset", "PACSDataset", "DatasetPartition",
+    "DatasetConfig", "DatasetOutput", "OfficeHomeDataset", "DigitsDGDataset",
+]
 
 class DatasetOutput(BaseModel):
     image_tensor: torch.Tensor
@@ -80,7 +82,7 @@ class ImageDataset(Dataset[DatasetOutput]):
     @classmethod
     def download(cls, destination: str) -> None:
         print(f"Downloading data from {cls.data_url}")
-        
+
         file_path = download_from_gdrive(cls.data_url, f'{destination}/{cls.dataset_name}.zip')
         print("Extracting files in dataset ...")
 
@@ -185,7 +187,7 @@ class DigitsDGDataset(ImageDataset):
     def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
         data_root_path = self.config.data_path
         domain_names = self.config.domains
-        
+
         reference_label_map = defaultdict(list)
 
         for domain in domain_names:
@@ -201,7 +203,7 @@ class DigitsDGDataset(ImageDataset):
                             )
                             image_data_loader = ImageReader(image_loader, label)
                             reference_label_map[domain].append(image_data_loader)
-        
+
         return reference_label_map
 
 
