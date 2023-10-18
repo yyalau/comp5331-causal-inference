@@ -15,21 +15,21 @@ def unzip(file_path: str) -> str:
     if file_path.endswith(".zip"):
         with zipfile.ZipFile(file_path, "r") as zip_ref:
             zip_ref.extractall(extract_dir)
-    
+
     elif file_path.endswith(".tar"):
         with tarfile.open(file_path, "r:") as tar_ref:
             tar_ref.extractall(extract_dir)
-    
+
     elif file_path.endswith(".tar.gz"):
         with tarfile.open(file_path, "r:gz") as tar_gz_ref:
             tar_gz_ref.extractall(extract_dir)
-    
+
     return extract_dir
 
 
 def download_from_gdrive(url: str, destination: str) -> str:
     destination_path = Path(destination)
-    
+
     if not destination_path.exists():
         destination_path.parent.mkdir(parents=True, exist_ok=True)
 

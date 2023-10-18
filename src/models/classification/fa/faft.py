@@ -1,40 +1,35 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
-
-from torch import Tensor
 import torch.nn as nn
 # from torchvision.models import resnet18
 from torchvision.transforms import Normalize
 
-from modelops.dependencies import ClassificationModel, FAST_X, Classification_Y
+from ..erm import ERMModel
 
-from fourier import fourierMix
+from .base import FA_X, Classification_Y, FAModel
+from .fourier import fourierMix
 
 __all__ = ['FAFT']
 
-Classification_Output = TypeVar('Classification_Output', bound=Classification_Y)
 
-class FAFT(nn.Module, Generic[Classification_Output]):
+class FAFT(nn.Module, FAModel):
     def __init__(self,
-                classifer: ClassificationModel[FAST_X],
+                classifer: ERMModel,
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
                 eta: float = 2.0, # namda ~ U(0,eta) eta controlling the maximum style mixing rate
                 beta: float = 0.2, # interpolation coefficient
                 pixel_mean: list[float] = [0.5, 0.5, 0.5], # mean for normolization
                 pixel_std: list[float] = [0.5, 0.5, 0.5], # std for normolization
-                training: bool =True, # Wether or not network is training
+                training: bool = True, # Wether or not network is training
                 ) -> None:
         super(FAFT).__init__()
-
 
         self.style_transfer = fourierMix(eta).to(device)
         self.classifier = classifer
         self.beta = beta
         self.normalization = Normalize(mean = pixel_mean, std = pixel_std)
 
-
-    def forward(self, input: FAST_X) -> Classification_Output:
+    def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')
         styles = input.get('styles')
 
@@ -47,7 +42,6 @@ class FAFT(nn.Module, Generic[Classification_Output]):
         fx = self.classifier(self.normalization(content))
         weighted_output = fx*self.beta+(1-self.beta)*sum(fx_hats)/len(fx_hats)
 
-        predictions: Classification_Output = weighted_output
+        predictions: Classification_Y = weighted_output
 
         return predictions
-

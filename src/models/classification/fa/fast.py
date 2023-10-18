@@ -1,38 +1,37 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
-
+import torch
 import torch.nn as nn
 from torchvision.transforms import Normalize
 
-from modelops.dependencies import ClassificationModel, FAST_X, Classification_Y
+from ...nst import StyleTransferModel
+from ..erm import ERMModel
+
+from .base import FA_X, Classification_Y, FAModel
 
 __all__ = ['FAST']
 
-NST = TypeVar('NST', bound=nn.Module)
 
-Classification_Output = TypeVar('Classification_Output', bound=Classification_Y)
-
-class FAST(nn.Module, Generic[NST, Classification_Output]):
+class FAST(nn.Module, FAModel):
     def __init__(self,
-                style_transfer: NST,
-                classifer: ClassificationModel[FAST_X],
+                style_transfer: StyleTransferModel,
+                classifer: ERMModel,
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
+                beta: float = 0.2, # interpolation coefficient
                 pixel_mean: list[float] = [0.5, 0.5, 0.5], # mean for normolization
                 pixel_std: list[float] = [0.5, 0.5, 0.5], # std for normolization
                 gamma: float = 2.0, # Controls importance of StyleLoss vs ContentLoss, Loss = gamma*StyleLoss + ContentLoss
-                training: bool =True, # Wether or not network is training
+                training: bool = True, # Wether or not network is training
                 scr_temperature: float = 0.1,
                 ) -> None:
         super(FAST).__init__()
 
-
         self.style_transfer = style_transfer(gamma, training, scr_temperature).to(device)
         self.classifier = classifer
+        self.beta = beta
         self.normalization = Normalize(mean = pixel_mean, std = pixel_std)
 
-
-    def forward(self, input: FAST_X) -> Classification_Output:
+    def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')
         styles = input.get('styles')
 
@@ -47,8 +46,7 @@ class FAST(nn.Module, Generic[NST, Classification_Output]):
         weighted_output = fx*self.beta+(1-self.beta)*sum(fx_tildes)/len(fx_tildes)
 
         # classifier_input: FAST_X = {'content': weighted_output, 'styles': styles}
-        # predictions: Classification_Output = self.classifier(classifier_input)
-        predictions: Classification_Output = weighted_output
+        # predictions: Classification_Y = self.classifier(classifier_input)
+        predictions: Classification_Y = weighted_output
 
         return predictions
-

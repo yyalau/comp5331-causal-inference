@@ -3,37 +3,39 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 import lightning as L
-import .utils as ut
 
 from .modules import TransformerNet
+from . import utils as ut
+
+__all__ = ['ImageTransferFramework']
 
 
 class ImageTransferFramework(L.LightningModule):
     def __init__(self):
         super().__init__()
-        
+
         # hyperparameters: TODO: move to config file
-        self.content_weight = 1 # default value        
+        self.content_weight = 1 # default value
         self.style_weight = 20 # default value
         self.learning_rate = 1e-3 # default value
         style_size = 224 # default value
         style_image = "images/style-images/mosaic.jpg" # default value
         self.batch_size = 4 # default value
-        
-        
+
+
         # localization network
         self.features_blobs = []
 
         self.squeeze_net = models.squeezenet1_1(pretrained=True)
         self.squeeze_net.eval()
         self.squeeze_net._modules.get('features')[1].register_forward_hook(self.hook_feature)
-        
-        # cam        
+
+        # cam
         self.weight_softmax = torch.squeeze(list(self.squeeze_net.parameters())[-2])
 
         # perception network
         self.vgg16 = models.vgg16(pretrained=True)
-        
+
         # main model: image transfer network
         self.transfer_model = TransformerNet()
 
@@ -42,9 +44,9 @@ class ImageTransferFramework(L.LightningModule):
         style = ut.tensor_load_rgbimage(style_image, size=style_size)
         style = ut.preprocess_batch(style.repeat(self.batch_size, 1, 1, 1))
         self.gram_style = [ut.gram_matrix(y) for y in self.vgg16(ut.subtract_imagenet_mean_batch(style))]
-        
 
-        
+
+
     def hook_feature(self, module, input, output):
         self.features_blobs.append(output.data.cpu().numpy())
 
@@ -64,51 +66,51 @@ class ImageTransferFramework(L.LightningModule):
         ### cam loss
         y = self.forward(batch)
         y_cam = ut.subtract_mean_std_batch(ut.preprocess_batch(y))
-        
+
         x = batch.clone()
         x_cam = ut.subtract_mean_std_batch(ut.preprocess_batch(x))
-        
+
         logit_x = self.squeeze_net(x_cam); logit_y = self.squeeze_net(y_cam)
-        
-        
+
+
         cam_loss = 0
         label = []
-        
+
         ## cam loss and category loss
         for i in range(len(x_cam)):
             h_x  = F.softmax(logit_x[i])#.data.squeeze()
             probs_x, idx_x = h_x.sort(0, True)
-            
+
             h_y  = F.softmax(logit_y[i])#.data.squeeze()
             probs_y, idx_y = h_y.sort(0, True)
-            
+
             x_cam = self._returnCAM(self.features_blobs[0][i], self.weight_softmax, idx_x[0])
             y_cam = self._returnCAM(self.features_blobs[0][i], self.weight_softmax, idx_y[0])
-            
+
             cam_loss += F.mse_loss(x_cam, y_cam)
             label.append(idx_x[0])
 
-        cam_loss *= 80        
+        cam_loss *= 80
         category_loss = 10000 * F.cross_entropy(logit_y, torch.LongTensor(label).to(self.device))
-        
-        
-        
+
+
+
         ### content loss
         x = ut.subtract_imagenet_mean_batch(x)
         y = ut.subtract_imagenet_mean_batch(y)
         features_x = self.vgg16(x)
         features_y = self.vgg16(y)
-        
+
         content_loss = self.content_weight * F.mse_loss(features_x[2].data, features_y[2])
-        
-        
+
+
         ### style loss
         style_loss = 0
         for m in range(len(features_x)):
             gram_y = ut.gram_matrix(features_y[m])
             style_loss += self.style_weight* F.mse_loss(gram_y, self.gram_style[m].data[:self.batch_size*batch_idx, :, :])
-        
-        
+
+
         ### total loss
         total_loss = cam_loss + category_loss + content_loss + style_loss
         return total_loss
@@ -116,12 +118,10 @@ class ImageTransferFramework(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
-    
+
 
 if __name__ == "__main__":
-    
+
     # TODO: test compatability with data loader
     # TODO: not yet tested if the code works / model is training properly
     model = ImageTransferFramework()
-    
-    

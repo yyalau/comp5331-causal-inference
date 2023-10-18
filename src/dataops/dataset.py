@@ -21,14 +21,16 @@ from PIL import Image
 from pathlib import Path
 from pydantic import BaseModel
 
-from .image import create_image_loader
-from .func import get_flattened_index
-from .augmentation import RandAugment
-from .utils import download_from_gdrive, unzip
+from image import create_image_loader
+from func import get_flattened_index
+from augmentation import RandAugment
+from utils import download_from_gdrive, unzip
 
 
-__all__ = ["ImageDataset", "PACSDataset", "DatasetPartition", 
-"DatasetConfig", "DatasetOutput", "OfficeHomeDataset", "DigitsDGDataset"]
+__all__ = [
+    "ImageDataset", "PACSDataset", "DatasetPartition",
+    "DatasetConfig", "DatasetOutput", "OfficeHomeDataset", "DigitsDGDataset",
+]
 
 class DatasetOutput(BaseModel):
     image_tensor: torch.Tensor
@@ -43,6 +45,8 @@ class DatasetOutput(BaseModel):
 class DatasetConfig:
     dataset_path_root: Path
     domains: List[str]
+    train_val_domains: List[str]
+    test_domains: List[str]
     lazy: bool
     rand_augment: Tuple[float, float]
 
@@ -69,20 +73,28 @@ class ImageDataset(Dataset[DatasetOutput]):
             partition: DatasetPartition
     ) -> None:
         super().__init__()
-        self.config = config
+
+        self.lazy = config.lazy
         self.partition = partition
+        self.config = config
 
         if not config.dataset_path_root.exists():
             data_path = self.download(config.dataset_path_root.parent.name)
             self.config.dataset_path_root = Path(data_path)
 
+        self.domains = (
+            config.test_domains
+            if partition is DatasetPartition.TEST
+            else config.train_val_domains
+        )
         self.domain_data_map = self._fetch_data()
 
         self.len = sum(
             len(image_loader)
             for image_loader in self.domain_data_map.values()
         )
-        self.transforms = RandAugment(*self.config.rand_augment)
+        self.rand_augment = config.rand_augment
+        self.transforms = RandAugment(*self.rand_augment)
 
     @classmethod
     def download(cls, destination: str) -> str:
@@ -159,7 +171,7 @@ class PACSDataset(ImageDataset):
                     path = os.path.join(data_root_path, path)
                     label = int(label)
                     image_loader = create_image_loader(
-                        path, self.config.lazy
+                        path, self.lazy
                     )
                     image_data_loader = ImageReader(image_loader, label)
                     referance_label_map[domain_name].append(image_data_loader)
@@ -167,10 +179,14 @@ class PACSDataset(ImageDataset):
         return referance_label_map
 
     def _get_file_name(self, domain_name: str) -> str:
-        partition = self.partition
-        if partition is DatasetPartition.VALIDATE:
-            return "_".join([domain_name, "".join(["cross", partition, "_kfold.txt"])])
-        return "_".join([domain_name, "".join([partition, "_kfold.txt"])])
+        if self.partition is DatasetPartition.VALIDATE:
+            extension = "crossval_kfold.txt"
+        elif self.partition is DatasetPartition.TEST:
+            extension = "test_kfold.txt"
+        else:
+            extension = "train_kfold.txt"
+
+        return "_".join([domain_name, extension])
 
 
 
@@ -203,11 +219,11 @@ class DigitsDGDataset(ImageDataset):
                         if image.is_file():
                             label = int(folder.name)
                             image_loader = create_image_loader(
-                                image.as_uri(), self.config.lazy
+                                image.as_uri(), self.lazy
                             )
                             image_data_loader = ImageReader(image_loader, label)
                             reference_label_map[domain].append(image_data_loader)
-        
+
         return reference_label_map
 
 class SplitData(BaseModel):

@@ -1,2 +1,2 @@
-from .transformer import TransformerNet
-from .vgg16 import Vgg16
+from .transformer import *
+from .vgg16 import *

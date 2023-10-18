@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.fft as fft
 import numpy as np
+
+__all__ = ['fourierMix']
+
 
 class fourierMix(nn.Module):
     def __init__(self, eta: float = 0.5) -> None:
@@ -33,7 +38,3 @@ class fourierMix(nn.Module):
         x_hat = torch.real(fft.ifft2(x_hat))
 
         return x_hat
-
-
-
-

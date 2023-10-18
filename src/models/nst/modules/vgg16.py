@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+__all__ = ['Vgg16']
+
+
 class Vgg16(torch.nn.Module):
     def __init__(self):
         super(Vgg16, self).__init__()
+
         self.conv1_1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
         self.conv1_2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
 
@@ -23,7 +29,7 @@ class Vgg16(torch.nn.Module):
         self.conv5_2 = nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
         self.conv5_3 = nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1)
 
-    def forward(self, X):
+    def forward(self, X: torch.Tensor):
         h = F.relu(self.conv1_1(X))
         h = F.relu(self.conv1_2(h))
         relu1_2 = h

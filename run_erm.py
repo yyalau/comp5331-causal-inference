@@ -4,8 +4,8 @@ from pathlib import Path
 
 from lightning.pytorch.cli import LightningCLI
 
-# from src.dataops.datamodules import ERMDataModule
-from src.modelops.tasks import ERMTask
+from src.datamodules.classification import ERMDataModule
+from src.tasks.classification import ERMTask
 
 def cli():
     experiment_name = 'erm'
@@ -13,7 +13,7 @@ def cli():
 
     LightningCLI(
         model_class=ERMTask,
-        # datamodule_class=ERMDataModule,
+        datamodule_class=ERMDataModule,
         trainer_defaults={
             'logger': {
                 'class_path': 'TensorBoardLogger',
