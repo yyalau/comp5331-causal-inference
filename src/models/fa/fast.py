@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from torch import Tensor
 import torch.nn as nn
 from torchvision.transforms import Normalize
 
@@ -19,8 +18,8 @@ class FAST(nn.Module, Generic[NST, Classification_Output]):
                 style_transfer: NST,
                 classifer: ClassificationModel[FAST_X],
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
-                pixel_mean: float[3] = [0.5, 0.5, 0.5], # mean for normolization
-                pixel_std: float[3] = [0.5, 0.5, 0.5], # std for normolization
+                pixel_mean: list[float] = [0.5, 0.5, 0.5], # mean for normolization
+                pixel_std: list[float] = [0.5, 0.5, 0.5], # std for normolization
                 gamma: float = 2.0, # Controls importance of StyleLoss vs ContentLoss, Loss = gamma*StyleLoss + ContentLoss
                 training: bool =True, # Wether or not network is training
                 scr_temperature: float = 0.1,

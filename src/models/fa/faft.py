@@ -15,17 +15,17 @@ __all__ = ['FAFT']
 
 Classification_Output = TypeVar('Classification_Output', bound=Classification_Y)
 
-class FAST(nn.Module, Generic[Classification_Output]):
+class FAFT(nn.Module, Generic[Classification_Output]):
     def __init__(self,
                 classifer: ClassificationModel[FAST_X],
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
                 eta: float = 2.0, # namda ~ U(0,eta) eta controlling the maximum style mixing rate
                 beta: float = 0.2, # interpolation coefficient
-                pixel_mean: float[3] = [0.5, 0.5, 0.5], # mean for normolization
-                pixel_std: float[3] = [0.5, 0.5, 0.5], # std for normolization
+                pixel_mean: list[float] = [0.5, 0.5, 0.5], # mean for normolization
+                pixel_std: list[float] = [0.5, 0.5, 0.5], # std for normolization
                 training: bool =True, # Wether or not network is training
                 ) -> None:
-        super(FAST).__init__()
+        super(FAFT).__init__()
 
 
         self.style_transfer = fourierMix(eta).to(device)

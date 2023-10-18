@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from torch import Tensor
+
 import torch.nn as nn
 from torchvision.transforms import Normalize
 
@@ -16,20 +16,20 @@ NST = TypeVar('NST', bound=nn.Module)
 
 Classification_Output = TypeVar('Classification_Output', bound=Classification_Y)
 
-class FAST(nn.Module, Generic[NST, Classification_Output]):
+class FAGT(nn.Module, Generic[NST, Classification_Output]):
     def __init__(self,
                 nst: NST,
                 classifer: ClassificationModel[FAST_X],
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
                 eta: float = 2.0, # namda ~ U(0,eta) eta controlling the maximum style mixing rate
                 beta: float = 0.2, # interpolation coefficient
-                pixel_mean: float[3] = [0.5, 0.5, 0.5], # mean for normolization
-                pixel_std: float[3] = [0.5, 0.5, 0.5], # std for normolization
+                pixel_mean: list[float] = [0.5, 0.5, 0.5], # mean for normolization
+                pixel_std: list[float] = [0.5, 0.5, 0.5], # std for normolization
                 gamma: float = 2.0, # Controls importance of StyleLoss vs ContentLoss, Loss = gamma*StyleLoss + ContentLoss
                 training: bool =True, # Wether or not network is training
                 scr_temperature: float = 0.1,
                 ) -> None:
-        super(FAST).__init__()
+        super(FAGT).__init__()
 
 
         self.fst = fourierMix(eta).to(device)

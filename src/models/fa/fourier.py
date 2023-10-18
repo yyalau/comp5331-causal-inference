@@ -4,7 +4,7 @@ import torch.fft as fft
 import numpy as np
 
 class fourierMix(nn.Module):
-    def __init__(self, eta = 0.5) -> None:
+    def __init__(self, eta: float = 0.5) -> None:
         super().__init__()
         self.eta = eta
     
