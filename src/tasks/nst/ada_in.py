@@ -21,7 +21,6 @@ class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
         *,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
-        alpha: float = 1.0,
         gamma: float = 2.0,
     ) -> None:
         super().__init__(
@@ -31,7 +30,6 @@ class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
 
         self.network = network
 
-        self.alpha = alpha
         self.gamma = gamma
 
         self.loss = self._combined_loss
