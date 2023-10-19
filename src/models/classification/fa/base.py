@@ -26,5 +26,5 @@ class FA_X(TypedDict):
 
 class FAModel(ClassificationModel[FA_X], Protocol):
     """
-    Represents a FA (Front-door Adjustment via Neural Style Transfer) classifier for images.
+    Represents a FA (Front-door Adjustment) classifier for images.
     """

@@ -4,13 +4,23 @@ import torch.nn.functional as F
 from torchvision import models
 import lightning as L
 
+from .base import StyleTransfer_X, StyleTransfer_Y, StyleTransferModel
 from .modules import TransformerNet
 from . import utils as ut
 
-__all__ = ['ImageTransferFramework']
+__all__ = ['ImageTransferNetwork']
 
 
-class ImageTransferFramework(L.LightningModule):
+class ImageTransferNetwork(nn.Module, StyleTransferModel):
+    """
+    Represents an Image Transfer Network [1]_ style transfer model for images.
+
+    References
+    ----------
+    .. [1] Yijun Liu, Zuoteng Xu, Wujian Ye, Ziwen Zhang, Shaowei Weng, Chin-Chen Chang,
+       and Huajin Tang. 2019. Image Neural Style Transfer With Preserving the Salient Regions.
+       *IEEE Access 7* (2019), 40027--40037. <https://doi.org/10.1109/access.2019.2891576>
+    """
     def __init__(self):
         super().__init__()
 
@@ -56,8 +66,7 @@ class ImageTransferFramework(L.LightningModule):
         cam = torch.matmul(weight_softmax[class_idx],feature_conv.view(nc, h*w))
         return cam
 
-
-    def forward(self, x):
+    def forward(self, x: StyleTransfer_X) -> StyleTransfer_Y:
         y = self.transfer_model(x)
         return y
 
@@ -124,4 +133,4 @@ if __name__ == "__main__":
 
     # TODO: test compatability with data loader
     # TODO: not yet tested if the code works / model is training properly
-    model = ImageTransferFramework()
+    model = ImageTransferNetwork()

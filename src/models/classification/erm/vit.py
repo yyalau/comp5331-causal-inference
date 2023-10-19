@@ -92,6 +92,17 @@ class Transformer(nn.Module):
         return self.norm(x)
 
 class ViT(nn.Module, ERMModel):
+    """
+    Represents a ViT (Vision Transformer) [1]_ classifier for images.
+
+    References
+    ----------
+    .. [1] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn,
+       Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer,
+       Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby. 2021.
+       An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale.
+       In *ICLR 2021*. <https://doi.org/10.48550/arXiv.2010.11929>
+    """
     def __init__(
         self,
         *,

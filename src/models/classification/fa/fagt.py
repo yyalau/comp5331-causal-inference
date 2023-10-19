@@ -13,6 +13,17 @@ __all__ = ['FAGT']
 
 
 class FAGT(nn.Module, FAModel):
+    """
+    Represents a FAGT (Front-door Adjustment via General Transfer) [1]_ classifier for images.
+
+    References
+    ----------
+    .. [1] Toan Nguyen, Kien Do, Duc Thanh Nguyen, Bao Duong, and Thin Nguyen. 2023.
+       Causal Inference via Style Transfer for Out-of-distribution Generalisation.
+       In *Proceedings of the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '23)*.
+       Association for Computing Machinery, New York, NY, USA, 1746--1757.
+       <https://doi.org/10.1145/3580305.3599270>
+    """
     def __init__(self,
                 nst: StyleTransferModel,
                 classifer: ERMModel,

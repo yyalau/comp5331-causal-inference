@@ -13,6 +13,17 @@ __all__ = ['FAFT']
 
 
 class FAFT(nn.Module, FAModel):
+    """
+    Represents a FAFT (Front-door Adjustment via Fourier-based Style Transfer) [1]_ classifier for images.
+
+    References
+    ----------
+    .. [1] Toan Nguyen, Kien Do, Duc Thanh Nguyen, Bao Duong, and Thin Nguyen. 2023.
+       Causal Inference via Style Transfer for Out-of-distribution Generalisation.
+       In *Proceedings of the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '23)*.
+       Association for Computing Machinery, New York, NY, USA, 1746--1757.
+       <https://doi.org/10.1145/3580305.3599270>
+    """
     def __init__(self,
                 classifer: ERMModel,
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
