@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from typing import List
-from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader
+from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
 from ..image import create_image_loader
 
 
@@ -14,7 +14,7 @@ __all__ = ["PACSDataset"]
 class PACSDataset(ImageDataset):
     data_url: str = "https://drive.google.com/uc?id=1m4X4fROCCXMO0lRLrr6Zz9Vb3974NWhE"
 
-    dataset_name = "PACS"
+    dataset_name = SupportedDatasets.PACS
 
     def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
         super().__init__(config, partition)
@@ -26,30 +26,35 @@ class PACSDataset(ImageDataset):
         referance_label_map = defaultdict(list)
 
         for domain_name in domain_labels:
+            files_to_search = self._get_file_name(domain_name)
 
-            file_name = self._get_file_name(domain_name)
-            file_path = Path(f'{data_root_path}/splits/{file_name}')
-            with open(file_path, "r") as f:
-                lines = f.readlines()
-                for line in lines:
-                    path, label = line.strip().split(" ")
-                    path = Path(f'{data_root_path}/images/{path}')
-                    label = int(label)
-                    image_loader = create_image_loader(
-                        path, self.lazy
-                    )
-                    image_data_reader = ImageReader(image_loader, label)
-                    referance_label_map[domain_name].append(image_data_reader)
+            for file_name in files_to_search:
+                file_path = Path(f'{data_root_path}/splits/{file_name}')
+
+                with open(file_path, "r") as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        path, label = line.strip().split(" ")
+                        path = Path(f'{data_root_path}/images/{path}')
+                        label = int(label)
+                        image_loader = create_image_loader(
+                            path, self.lazy
+                        )
+                        image_data_reader = ImageReader(image_loader, label)
+                        referance_label_map[domain_name].append(image_data_reader)
 
         return referance_label_map
 
 
-    def _get_file_name(self, domain_name: str) -> str:
+    def _get_file_name(self, domain_name: str) -> list[str]:
+        file_names = ["_".join([domain_name, "train_kfold.txt"])]
+        
         if self.partition is DatasetPartition.VALIDATE:
-            extension = "crossval_kfold.txt"
+            file_names = ["_".join([domain_name, "crossval_kfold.txt"])]
         elif self.partition is DatasetPartition.TEST:
-            extension = "test_kfold.txt"
-        else:
-            extension = "train_kfold.txt"
+            file_names = ["_".join([domain_name, "test_kfold.txt"])]
+        elif self.partition is DatasetPartition.ALL:
+            file_names.append("_".join([domain_name, "test_kfold.txt"]))
+            file_names.append("_".join([domain_name, "crossval_kfold.txt"]))
 
-        return "_".join([domain_name, extension])
+        return file_names

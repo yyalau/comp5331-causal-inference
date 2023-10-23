@@ -5,16 +5,23 @@ from collections.abc import Callable, Mapping
 import copy
 from dataclasses import dataclass
 from enum import Enum
+
 import numpy as np
 import numpy.typing as npt
+
 from pathlib import Path
+
 from PIL import Image
 from pydantic import BaseModel
-from tasks.classification import Classification_Y, FA_X, ERM_X
-from tasks.nst import StyleTransfer_X
+
 from torch.utils.data import Dataset
 import torch
-from typing import List, Optional, Tuple, TypeAlias
+
+from typing import List, Optional, Tuple
+from typing_extensions import TypeAlias
+
+from ...tasks.classification import Classification_Y, FA_X, ERM_X
+from ...tasks.nst import StyleTransfer_X
 
 from ..augmentation import RandAugment
 from ..func import (
@@ -25,9 +32,14 @@ from ..func import (
 from ..utils import download_from_gdrive, unzip
 
 
-__all__ = ["ImageDataset", "DatasetPartition", "DatasetConfig", "DatasetOutput"]
+__all__ = ["ImageDataset", 'SupportedDatasets', "DatasetPartition", "DatasetConfig", "DatasetOutput"]
 
 Tensor: TypeAlias = torch.Tensor
+
+class SupportedDatasets(str, Enum):
+    PACS = 'PACS'
+    OFFICE = 'OfficeHome'
+    Digits =  'DigitsDG'
 
 class DatasetOutput(BaseModel):
     image: npt.NDArray[np.float32]
@@ -41,6 +53,7 @@ class DatasetOutput(BaseModel):
 @dataclass(frozen=False)
 class DatasetConfig:
     dataset_path_root: Path
+    dataset_name: SupportedDatasets
     train_val_domains: List[str]
     test_domains: List[str]
     lazy: bool
@@ -53,6 +66,7 @@ class DatasetPartition(str, Enum):
     TRAIN = "train"
     TEST = "test"
     VALIDATE = "val"
+    ALL = 'full'
 
 
 @dataclass

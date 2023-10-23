@@ -1,27 +1,28 @@
 from __future__ import annotations
 
 from torch.utils.data import DataLoader
-import lightning.pytorch as pl
 
-from ...tasks.classification import ERM_X, Classification_Y
+from ...dataops.dataset import DatasetConfig, DatasetOutput
+
+from ..base import BaseDataModule
 
 __all__ = ['ERMDataModule']
 
 
-class ERMDataModule(pl.LightningDataModule):
-    def __init__(self, *, max_batches: int | None = None, **kwargs) -> None:
-        super().__init__()
+class ERMDataModule(BaseDataModule):
+    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None, **kwargs) -> None:
+        super().__init__(dataset_config, max_batches)
 
-        raise NotImplementedError
+    def train_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.train_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_erm)
 
-    def train_dataloader(self) -> DataLoader[tuple[ERM_X, Classification_Y]]:
-        raise NotImplementedError
+    def val_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.val_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_erm)
 
-    def val_dataloader(self) -> DataLoader[tuple[ERM_X, Classification_Y]]:
-        raise NotImplementedError
 
-    def test_dataloader(self) -> DataLoader[tuple[ERM_X, Classification_Y]]:
-        raise NotImplementedError
+    def test_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.test_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_erm)
 
-    def predict_dataloader(self) -> DataLoader[ERM_X]:
-        raise NotImplementedError
+
+    def predict_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.full_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_erm)

@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel
 import random
 from typing import List
-from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader
+from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
 from ..image import create_image_loader
 
 __all__ = ["OfficeHomeDataset"]
@@ -16,12 +16,12 @@ __all__ = ["OfficeHomeDataset"]
 class SplitData(BaseModel):
     train: List[Path]
     test: List[Path]
-    val: list[Path]
+    val: List[Path]
 
 
 class OfficeHomeDataset(ImageDataset):
     data_url: str = 'https://drive.google.com/u/0/uc?id=0B81rNlvomiwed0V1YUxQdC1uOTg&export=download&resourcekey=0-2SNWq0CDAuWOBRRBL7ZZsw'
-    dataset_name = "OfficeHome"
+    dataset_name = SupportedDatasets.OFFICE
 
     def __init__(
         self,
@@ -40,12 +40,19 @@ class OfficeHomeDataset(ImageDataset):
     def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
         split_data = self._split_data()
 
-        data_to_fetch = split_data.train
+        train_data = split_data.train
+        test_data = split_data.test
+        val_data = split_data.val
+
+        data_to_fetch = train_data
 
         if self.partition is DatasetPartition.TEST:
-            data_to_fetch = split_data.test
+            data_to_fetch = test_data
         elif self.partition is DatasetPartition.VALIDATE:
-            data_to_fetch = split_data.val
+            data_to_fetch = val_data
+        elif self.partition is DatasetPartition.ALL:
+            data_to_fetch.extend(test_data)
+            data_to_fetch.extend(val_data)
 
         reference_label_map = defaultdict()
 
@@ -53,7 +60,7 @@ class OfficeHomeDataset(ImageDataset):
             label = self.labels[image_path.parent.name]
             domain = image_path.parent.parent.name
             image_loader = create_image_loader(
-                image_path.as_uri(), self.lazy
+                image_path, self.lazy
             )
 
             image_data_loader = ImageReader(image_loader, label)

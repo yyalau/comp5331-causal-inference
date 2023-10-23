@@ -1,27 +1,28 @@
 from __future__ import annotations
 
 from torch.utils.data import DataLoader
-import lightning.pytorch as pl
 
-from ...tasks.nst import StyleTransfer_X
+from ...dataops.dataset import DatasetConfig, DatasetOutput
+
+from ..base import BaseDataModule
 
 __all__ = ['AdaINDataModule']
 
 
-class AdaINDataModule(pl.LightningDataModule):
-    def __init__(self, *, max_batches: int | None = None, **kwargs) -> None:
-        super().__init__()
+class AdaINDataModule(BaseDataModule):
+    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None, **kwargs) -> None:
+        super().__init__(dataset_config, max_batches)
 
-        raise NotImplementedError
+    def train_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.train_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_st)
 
-    def train_dataloader(self) -> DataLoader[StyleTransfer_X]:
-        raise NotImplementedError
+    def val_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.val_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_st)
 
-    def val_dataloader(self) -> DataLoader[StyleTransfer_X]:
-        raise NotImplementedError
 
-    def test_dataloader(self) -> DataLoader[StyleTransfer_X]:
-        raise NotImplementedError
+    def test_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.test_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_st)
 
-    def predict_dataloader(self) -> DataLoader[StyleTransfer_X]:
-        raise NotImplementedError
+
+    def predict_dataloader(self) -> DataLoader[DatasetOutput]:
+        return DataLoader(self.full_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_st)
