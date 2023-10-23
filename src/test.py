@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from .dataset import (
+from dataops.dataset import (
     DatasetConfig,
     DatasetPartition,
     PACSDataset
@@ -72,5 +72,5 @@ if __name__ == '__main__':
 
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, collate_fn=collate)
 
-    for i, (X, Y) in enumerate(test):
+    for i, (X, Y) in enumerate(train_loader):
         print(i)
