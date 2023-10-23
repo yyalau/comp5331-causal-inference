@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
-from image import create_image_loader
 from pathlib import Path
 from pydantic import BaseModel
 import random
 from typing import List
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader
+from ..image import create_image_loader
 
 __all__ = ["OfficeHomeDataset"]
 
@@ -53,7 +53,7 @@ class OfficeHomeDataset(ImageDataset):
             label = self.labels[image_path.parent.name]
             domain = image_path.parent.parent.name
             image_loader = create_image_loader(
-                image_path.as_uri(), self.config.lazy
+                image_path.as_uri(), self.lazy
             )
 
             image_data_loader = ImageReader(image_loader, label)
@@ -62,8 +62,8 @@ class OfficeHomeDataset(ImageDataset):
         return reference_label_map
 
     def _split_data(self) -> SplitData:
-        data_path = self.config.dataset_path_root
-        domains = self.config.domains
+        data_path = self.dataset_path_root
+        domains = self.domains
         random.seed(self.seed)
 
         image_paths: list[Path] = []

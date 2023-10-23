@@ -4,9 +4,9 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Mapping
 from pathlib import Path
-from image import create_image_loader
 from typing import List
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader
+from ..image import create_image_loader
 
 __all__ = ["DigitsDGDataset"]
 
@@ -22,8 +22,8 @@ class DigitsDGDataset(ImageDataset):
             raise ValueError("Test dataset is not supported")
 
     def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
-        data_root_path = self.config.dataset_path_root
-        domain_names = self.config.domains
+        data_root_path = self.dataset_path_root
+        domain_names = self.domains
 
         reference_label_map = defaultdict(list)
 

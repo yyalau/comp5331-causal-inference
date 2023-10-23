@@ -10,11 +10,11 @@ import numpy.typing as npt
 from pathlib import Path
 from PIL import Image
 from pydantic import BaseModel
-from tasks.classification import FA_X, ERM_X, Classification_Y
+from tasks.classification import Classification_Y, FA_X, ERM_X
 from tasks.nst import StyleTransfer_X
 from torch.utils.data import Dataset
 import torch
-from typing import Tuple, List
+from typing import Tuple, List, TypeAlias
 
 from ..augmentation import RandAugment
 from ..func import (
@@ -22,12 +22,12 @@ from ..func import (
     sample_dictionary,
     sample_sequence_and_remove_from_population,
 )
-
 from ..utils import download_from_gdrive, unzip
 
 
 __all__ = ["ImageDataset", "DatasetPartition", "DatasetConfig", "DatasetOutput"]
 
+Tensor: TypeAlias = torch.Tensor
 
 class DatasetOutput(BaseModel):
     image: npt.NDArray[np.float32]
@@ -45,6 +45,8 @@ class DatasetConfig:
     test_domains: List[str]
     lazy: bool
     rand_augment: Tuple[float, float]
+    num_domains_to_sample: int
+    num_ood_samples: int
 
 
 class DatasetPartition(str, Enum):
@@ -68,6 +70,8 @@ class ImageDataset(Dataset[DatasetOutput]):
 
         self.lazy = config.lazy
         self.partition = partition
+        self.num_domains_to_sample = config.num_domains_to_sample
+        self.num_ood_samples = config.num_ood_samples
         self.dataset_path_root = config.dataset_path_root
         if not config.dataset_path_root.exists():
             data_path = self.download(config.dataset_path_root.parent.name)
@@ -86,17 +90,6 @@ class ImageDataset(Dataset[DatasetOutput]):
         self.rand_augment = config.rand_augment
         self.transforms = RandAugment(*self.rand_augment)
 
-    @classmethod
-    def download(cls, destination: str) -> str:
-        print(f"Downloading data from {cls.data_url}")
-
-        file_path = download_from_gdrive(
-            cls.data_url, f"{destination}/{cls.dataset_name}.zip"
-        )
-        print(f"Extracting files from {file_path}")
-
-        return unzip(file_path)
-
     def __getitem__(self, idx: int) -> DatasetOutput:
         """
         Get the preprocessed item at the specified index.
@@ -113,29 +106,19 @@ class ImageDataset(Dataset[DatasetOutput]):
         image = Image.fromarray(X)
         return np.array(self.transforms(image))
 
-    @abstractmethod
-    def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
-        pass
-
-    def num_domains(self) -> int:
-        return len(self.domain_data_map.keys())
-
-    def get_domain_data(self) -> Mapping[str, List[ImageReader]]:
-        return self.domain_data_map
-
-    def ood_sample(
+    def _ood_sample(
         self, domain_list: List[str], num_domains_to_sample: int, num_ood_samples: int
-    ):
+    ) -> List[Tensor]:
         domain_data_map = copy.deepcopy(self.domain_data_map)
+
         return [
             torch.from_numpy(sample.load())
             for domain in domain_list
-            for ood_domain_list in sample_dictionary(
+            for ood_domain in sample_dictionary(
                 domain_data_map,
                 num_domains_to_sample,
                 lambda other_domain: other_domain != domain,
             )
-            for ood_domain in ood_domain_list
             for sample in sample_sequence_and_remove_from_population(
                 domain_data_map[ood_domain], num_ood_samples
             )
@@ -143,28 +126,48 @@ class ImageDataset(Dataset[DatasetOutput]):
 
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]
-    ) -> Tuple[torch.Tensor, torch.Tensor, List[str]]:
+    ) -> Tuple[Tensor, Tensor, List[str]]:
         content = torch.from_numpy(np.array([data.image for data in batch]))
         labels = torch.from_numpy((np.array([data.label for data in batch])))
         domains = [data.domain for data in batch]
         return content, labels, domains
 
-    def collate(self, batch: List[DatasetOutput]) -> Tuple[ERM_X, Classification_Y]:
+    @abstractmethod
+    def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
+        pass
+
+    @classmethod
+    def download(cls, destination: str) -> str:
+        print(f"Downloading data from {cls.data_url}")
+
+        file_path = download_from_gdrive(
+            cls.data_url, f"{destination}/{cls.dataset_name}.zip"
+        )
+        print(f"Extracting files from {file_path}")
+
+        return unzip(file_path)
+
+    def num_domains(self) -> int:
+        return len(self.domain_data_map.keys())
+
+    def collate_erm(self, batch: List[DatasetOutput]) -> Tuple[ERM_X, Classification_Y]:
         content, labels, _ = self._create_tensors_from_batch(batch)
         return content, labels
 
-    def single_ood_collate(self, batch: List[DatasetOutput]) -> StyleTransfer_X:
+    def collate_st(self, batch: List[DatasetOutput]) -> StyleTransfer_X:
         content, _, domains = self._create_tensors_from_batch(batch)
-        style = self.ood_sample(domains, 1, 1)
-        assert len(style) == 1
+        style = self._ood_sample(domains, 1, 1)
+        assert len(style) == len(batch)
         return StyleTransfer_X(content=content, style=style[0])
 
-    def multi_ood_collate(
+    def collate_fa(
         self,
         batch: List[DatasetOutput],
-        num_domains_to_sample: int,
-        num_ood_samples: int,
     ) -> Tuple[FA_X, Classification_Y]:
         content, labels, domains = self._create_tensors_from_batch(batch)
-        styles = self.ood_sample(domains, num_domains_to_sample, num_ood_samples)
+        styles = self._ood_sample(
+            domains,
+            self.num_domains_to_sample,
+            self.num_ood_samples
+        )
         return FA_X(content=content, styles=styles), labels

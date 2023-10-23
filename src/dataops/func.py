@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Mapping, Optional, TypeVar, Tuple, List
+from typing import Any, Callable, List, Mapping, Optional, TypeVar, Tuple
 import random
 
 U = TypeVar('U')
