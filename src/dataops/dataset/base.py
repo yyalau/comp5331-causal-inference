@@ -14,7 +14,7 @@ from tasks.classification import Classification_Y, FA_X, ERM_X
 from tasks.nst import StyleTransfer_X
 from torch.utils.data import Dataset
 import torch
-from typing import Tuple, List, TypeAlias
+from typing import List, Optional, Tuple, TypeAlias
 
 from ..augmentation import RandAugment
 from ..func import (
@@ -45,8 +45,8 @@ class DatasetConfig:
     test_domains: List[str]
     lazy: bool
     rand_augment: Tuple[float, float]
-    num_domains_to_sample: int
-    num_ood_samples: int
+    num_domains_to_sample: Optional[int]
+    num_ood_samples: Optional[int]
 
 
 class DatasetPartition(str, Enum):
@@ -164,10 +164,16 @@ class ImageDataset(Dataset[DatasetOutput]):
         self,
         batch: List[DatasetOutput],
     ) -> Tuple[FA_X, Classification_Y]:
+        num_domains_to_sample = self.num_domains_to_sample
+        num_ood_samples = self.num_ood_samples
+
+        if num_domains_to_sample is None or num_ood_samples is None:
+            raise ValueError('Values for collate are empty')
+
         content, labels, domains = self._create_tensors_from_batch(batch)
         styles = self._ood_sample(
             domains,
-            self.num_domains_to_sample,
-            self.num_ood_samples
+            num_domains_to_sample,
+            num_ood_samples
         )
         return FA_X(content=content, styles=styles), labels
