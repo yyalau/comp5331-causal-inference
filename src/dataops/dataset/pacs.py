@@ -2,19 +2,33 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
+from enum import Enum
 from pathlib import Path
 from typing import List
+
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
 from ..image import create_image_loader
 
 
-__all__ = ["PACSDataset"]
+__all__ = ["PACSDataset", 'PACSDomains']
 
+class PACSDomains(str, Enum):
+    ART = 'art_painting'
+    CARTOON = 'cartoon'
+    PHOTO = 'photo'
+    SKETCH = 'sketch'
 
 class PACSDataset(ImageDataset):
     data_url: str = "https://drive.google.com/uc?id=1m4X4fROCCXMO0lRLrr6Zz9Vb3974NWhE"
-
     dataset_name = SupportedDatasets.PACS
+
+    @classmethod
+    def validate_domains(cls, domains: List[str]) -> None:
+        for name in domains:
+            try:
+                PACSDomains(name)
+            except ValueError:
+                raise ValueError(f'Domain `{name}` is not valid for {cls.dataset_name}.')
 
     def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
         super().__init__(config, partition)
@@ -48,7 +62,6 @@ class PACSDataset(ImageDataset):
 
     def _get_file_name(self, domain_name: str) -> list[str]:
         file_names = ["_".join([domain_name, "train_kfold.txt"])]
-        
         if self.partition is DatasetPartition.VALIDATE:
             file_names = ["_".join([domain_name, "crossval_kfold.txt"])]
         elif self.partition is DatasetPartition.TEST:

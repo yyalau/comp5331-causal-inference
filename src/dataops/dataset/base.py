@@ -31,15 +31,15 @@ from ..func import (
 )
 from ..utils import download_from_gdrive, unzip
 
-
 __all__ = ["ImageDataset", 'SupportedDatasets', "DatasetPartition", "DatasetConfig", "DatasetOutput"]
 
 Tensor: TypeAlias = torch.Tensor
 
+
 class SupportedDatasets(str, Enum):
     PACS = 'PACS'
     OFFICE = 'OfficeHome'
-    Digits =  'DigitsDG'
+    DIGITS = 'DigitsDG'
 
 class DatasetOutput(BaseModel):
     image: npt.NDArray[np.float32]
@@ -57,7 +57,7 @@ class DatasetConfig:
     train_val_domains: List[str]
     test_domains: List[str]
     lazy: bool
-    rand_augment: Tuple[float, float]
+    rand_augment: List[float]
     num_domains_to_sample: Optional[int]
     num_ood_samples: Optional[int]
 
@@ -67,7 +67,6 @@ class DatasetPartition(str, Enum):
     TEST = "test"
     VALIDATE = "val"
     ALL = 'full'
-
 
 @dataclass
 class ImageReader:
@@ -79,9 +78,38 @@ class ImageDataset(Dataset[DatasetOutput]):
     data_url = ""
     dataset_name = ""
 
+    @abstractmethod
+    def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def validate(cls, domains: List[str]) -> None:
+        raise NotImplementedError()
+
+    @classmethod
+    def download(cls, destination: str) -> str:
+        print(f"Downloading data from {cls.data_url}")
+
+        file_path = download_from_gdrive(
+            cls.data_url, f"{destination}/{cls.dataset_name}.zip"
+        )
+        print(f"Extracting files from {file_path}")
+
+        return unzip(file_path)
+
+    @classmethod
+    def validate_dataset_name(cls):
+        try:
+            SupportedDatasets(cls.dataset_name)
+        except ValueError:
+            raise ValueError('not supported dataset {cls.dataset_name}')
+
     def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
         super().__init__()
-
+        self.validate_dataset_name()
+        self.validate(config.train_val_domains)
+        self.validate(config.test_domains)
         self.lazy = config.lazy
         self.partition = partition
         self.num_domains_to_sample = config.num_domains_to_sample
@@ -102,6 +130,7 @@ class ImageDataset(Dataset[DatasetOutput]):
             len(image_loader) for image_loader in self.domain_data_map.values()
         )
         self.rand_augment = config.rand_augment
+        assert len(self.rand_augment) == 2
         self.transforms = RandAugment(*self.rand_augment)
 
     def __getitem__(self, idx: int) -> DatasetOutput:
@@ -145,21 +174,6 @@ class ImageDataset(Dataset[DatasetOutput]):
         labels = torch.from_numpy((np.array([data.label for data in batch])))
         domains = [data.domain for data in batch]
         return content, labels, domains
-
-    @abstractmethod
-    def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
-        pass
-
-    @classmethod
-    def download(cls, destination: str) -> str:
-        print(f"Downloading data from {cls.data_url}")
-
-        file_path = download_from_gdrive(
-            cls.data_url, f"{destination}/{cls.dataset_name}.zip"
-        )
-        print(f"Extracting files from {file_path}")
-
-        return unzip(file_path)
 
     def num_domains(self) -> int:
         return len(self.domain_data_map.keys())

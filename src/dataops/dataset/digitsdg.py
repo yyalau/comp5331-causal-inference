@@ -3,17 +3,32 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
+from enum import Enum
 from pathlib import Path
 from typing import List
+
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
 from ..image import create_image_loader
 
-__all__ = ["DigitsDGDataset"]
+__all__ = ["DigitsDGDataset", "DigitsDomains"]
 
+class DigitsDomains(str, Enum):
+    MNIST = 'mnist'
+    MNIST_M = 'mnist_m'
+    SVHN = 'svhn'
+    SYN = 'syn'
 
 class DigitsDGDataset(ImageDataset):
     data_url: str = "https://drive.google.com/u/0/uc?id=15V7EsHfCcfbKgsDmzQKj_DfXt_XYp_P7&export=download"
-    dataset_name = SupportedDatasets.Digits
+    dataset_name = SupportedDatasets.DIGITS
+
+    @classmethod
+    def validate_domains(cls, domains: List[str]) -> None:
+        for name in domains:
+            try:
+                DigitsDomains(name)
+            except ValueError:
+                raise ValueError(f'Domain `{name}` is not valid for {cls.dataset_name}.')
 
     def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
         super().__init__(config, partition)

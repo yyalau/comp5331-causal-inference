@@ -1,4 +1,11 @@
-- max_batches: ...
-- dataset_config:
-  - dataset_path_root: ...
-  - ...
+data:
+  max_batches: 2
+  dataset_config:
+    dataset_path_root: "./data/pacs"
+    dataset_name: "PACS"
+    train_val_domains: ['art_painting', 'cartoon', 'photo']
+    test_domains: ['cartoon', 'photo','sketch']
+    lazy: True
+    rand_augment: [1.0, 1.0]
+    num_domains_to_sample: 3
+    num_ood_samples: 2

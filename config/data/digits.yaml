@@ -1,0 +1,11 @@
+data:
+  max_batches: 2
+  dataset_config:
+    dataset_path_root: "./data/digits_dg"
+    dataset_name: "DigitsDG"
+    train_val_domains: ['mnist', 'mnist_m', 'svhn']
+    test_domains: ['mnist', 'mnist_m', 'syn']
+    lazy: True
+    rand_augment: [1.0, 1.0]
+    num_domains_to_sample: 3
+    num_ood_samples: 2

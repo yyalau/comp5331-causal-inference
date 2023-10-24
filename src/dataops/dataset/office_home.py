@@ -3,14 +3,16 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
+from enum import Enum
 from pathlib import Path
 from pydantic import BaseModel
 import random
 from typing import List
+
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
 from ..image import create_image_loader
 
-__all__ = ["OfficeHomeDataset"]
+__all__ = ["OfficeHomeDataset", "OfficHomeDomains"]
 
 
 class SplitData(BaseModel):
@@ -19,9 +21,23 @@ class SplitData(BaseModel):
     val: List[Path]
 
 
+class OfficHomeDomains(str, Enum):
+    ART = 'Art'
+    CLIPART = 'Clipart'
+    PRODUCT = 'Product'
+    REAL_WORLD = 'Real World'
+
 class OfficeHomeDataset(ImageDataset):
     data_url: str = 'https://drive.google.com/u/0/uc?id=0B81rNlvomiwed0V1YUxQdC1uOTg&export=download&resourcekey=0-2SNWq0CDAuWOBRRBL7ZZsw'
     dataset_name = SupportedDatasets.OFFICE
+
+    @classmethod
+    def validate_domains(cls, domains: List[str]) -> None:
+        for name in domains:
+            try:
+                OfficHomeDomains(name)
+            except ValueError:
+                raise ValueError(f'Domain `{name}` is not valid for {cls.dataset_name}.')
 
     def __init__(
         self,

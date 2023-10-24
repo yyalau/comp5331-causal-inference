@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import gdown
-
 import tarfile
 from typing import Optional
 import zipfile
 
 from pathlib import Path
-
 
 def unzip(file_path: str) -> str:
     extract_dir = Path(file_path).parent.name
