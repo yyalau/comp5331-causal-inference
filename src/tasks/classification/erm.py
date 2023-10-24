@@ -14,6 +14,8 @@ __all__ = ['ERMTask', 'ERM_X']
 
 
 class ERMTask(ClassificationTask[ERM_X]):
+    __doc__ = ClassificationTask.__doc__
+
     def __init__(
         self,
         classifier: ERMModel,

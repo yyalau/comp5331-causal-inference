@@ -14,6 +14,8 @@ __all__ = ['FATask', 'FA_X']
 
 
 class FATask(ClassificationTask[FA_X]):
+    __doc__ = ClassificationTask.__doc__
+
     def __init__(
         self,
         classifier: FAModel,

@@ -18,6 +18,20 @@ __all__ = ['ClassificationTask', 'X', 'Classification_Y']
 
 
 class ClassificationTask(BaseTask[tuple[X, Classification_Y], X, Classification_Y], Generic[X]):
+    """
+    Defines the train/validation/test/predict loops for a classification model.
+
+    Parameters
+    ----------
+    classifier : ClassificationModel
+        The classification model to use.
+    optimizer : callable
+        A factory function that constructs a new :class:`Optimizer` instance for
+        training the model.
+    scheduler : callable
+        A factory function that constructs a new :class:`LRScheduler` instance for
+        training the model.
+    """
     def __init__(
         self,
         classifier: ClassificationModel[X],

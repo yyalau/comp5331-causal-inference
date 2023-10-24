@@ -15,6 +15,23 @@ __all__ = ['AdaINTask', 'StyleTransfer_X', 'StyleTransfer_Y']
 
 
 class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
+    """
+    Defines the train/validation/test/predict loops for an AdaIN model.
+
+    Parameters
+    ----------
+    network : AdaINModel
+        The AdaIN model to use.
+    optimizer : callable
+        A factory function that constructs a new :class:`Optimizer` instance for
+        training the model.
+    scheduler : callable
+        A factory function that constructs a new :class:`LRScheduler` instance for
+        training the model.
+    gamma : float, default 2.0
+        The ratio of importance between the style loss and content loss.
+        The overall loss is given by `content_loss + gamma * style_loss`.
+    """
     def __init__(
         self,
         network: AdaINModel,

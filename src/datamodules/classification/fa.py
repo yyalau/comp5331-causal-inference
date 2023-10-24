@@ -10,7 +10,7 @@ __all__ = ['FADataModule']
 
 
 class FADataModule(BaseDataModule):
-    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None, **kwargs) -> None:
+    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None) -> None:
         super().__init__(dataset_config, max_batches)
 
     def train_dataloader(self) -> DataLoader[DatasetOutput]:
@@ -21,7 +21,6 @@ class FADataModule(BaseDataModule):
 
     def test_dataloader(self) -> DataLoader[DatasetOutput]:
         return DataLoader(self.test_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_fa)
-
 
     def predict_dataloader(self) -> DataLoader[DatasetOutput]:
         return DataLoader(self.full_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_fa)

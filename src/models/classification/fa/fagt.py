@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import torch
 import torch.nn as nn
 from torchvision.transforms import Normalize
 
@@ -7,7 +8,7 @@ from ...nst import StyleTransferModel
 from ..erm import ERMModel
 
 from .base import FA_X, Classification_Y, FAModel
-from .fourier import fourierMix
+from .fourier import FourierMix
 
 __all__ = ['FAGT']
 
@@ -15,6 +16,21 @@ __all__ = ['FAGT']
 class FAGT(nn.Module, FAModel):
     """
     Represents a FAGT (Front-door Adjustment via General Transfer) [1]_ classifier for images.
+
+    Parameters
+    ----------
+    nst : StyleTransferModel
+        The style transfer model to use in the network.
+    classifier : ERMModel
+        The classifier model to use in the network.
+    eta : float, default 2.0
+        A hyperparameter controlling the maximum style mixing rate.
+    beta : float, default 0.2
+        The interpolation coefficient between the original image and the stylized image.
+    pixel_mean : tuple of float, default (0.5, 0.5, 0.5)
+        For each channel, the mean value of pixels to be used for normalization.
+    pixel_mean : tuple of float, default (0.5, 0.5, 0.5)
+        For each channel, the standard deviation of pixels to be used for normalization.
 
     References
     ----------
@@ -24,25 +40,22 @@ class FAGT(nn.Module, FAModel):
        Association for Computing Machinery, New York, NY, USA, 1746--1757.
        <https://doi.org/10.1145/3580305.3599270>
     """
-    def __init__(self,
-                nst: StyleTransferModel,
-                classifer: ERMModel,
-                device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
-                eta: float = 2.0, # namda ~ U(0,eta) eta controlling the maximum style mixing rate
-                beta: float = 0.2, # interpolation coefficient
-                pixel_mean: list[float] = [0.5, 0.5, 0.5], # mean for normolization
-                pixel_std: list[float] = [0.5, 0.5, 0.5], # std for normolization
-                gamma: float = 2.0, # Controls importance of StyleLoss vs ContentLoss, Loss = gamma*StyleLoss + ContentLoss
-                training: bool = True, # Wether or not network is training
-                scr_temperature: float = 0.1,
-                ) -> None:
-        super(FAGT).__init__()
+    def __init__(
+        self,
+        nst: StyleTransferModel,
+        classifer: ERMModel,
+        eta: float = 2.0,
+        beta: float = 0.2,
+        pixel_mean: tuple[float, float, float] = (0.5, 0.5, 0.5),
+        pixel_std: tuple[float, float, float] = (0.5, 0.5, 0.5),
+    ) -> None:
+        super().__init__()
 
-        self.fst = fourierMix(eta).to(device)
-        self.nst: StyleTransferModel = nst(gamma, training, scr_temperature).to(device)
+        self.fst = FourierMix(eta)
+        self.nst = nst
         self.classifier = classifer
         self.beta = beta
-        self.normalization = Normalize(mean = pixel_mean, std = pixel_std)
+        self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
 
         # The NST model is considered frozen when training by FA
         for p in self.nst.parameters():
@@ -52,7 +65,7 @@ class FAGT(nn.Module, FAModel):
         content = input.get('content')
         styles = input.get('styles')
 
-        #TODO: may need to downsize
+        # TODO: may need to downsize
         fx_hats = []
         fx_tildes = []
         for x_prime in styles:
@@ -60,12 +73,13 @@ class FAGT(nn.Module, FAModel):
             fx_hat = self.classifier(self.normalization(x_hat))
             fx_hats.append(fx_hat)
 
-            x_tilde = self.nst(content, x_prime)
+            x_tilde = self.nst({'style': x_prime, 'content': content})
             fx_tilde = self.classifier(self.normalization(x_tilde))
             fx_tildes.append(fx_tilde)
+        fx_hats_tildes_avg = torch.stack([*fx_hats, *fx_tildes], dim=0).mean(dim=0)
 
         fx = self.classifier(self.normalization(content))
-        weighted_output = fx*self.beta+(1-self.beta)*(sum(fx_hats)+sum(fx_tildes))/(len(fx_hats)+len(fx_tildes))
+        weighted_output = fx * self.beta + (1 - self.beta) * fx_hats_tildes_avg
 
         predictions: Classification_Y = weighted_output
 

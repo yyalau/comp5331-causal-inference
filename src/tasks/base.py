@@ -17,6 +17,18 @@ Eval_X = TypeVar('Eval_X')                                  # For model evaluati
 Infer_X, Infer_Y = TypeVar('Infer_X'), TypeVar('Infer_Y')   # For model inference
 
 class BaseTask(pl.LightningModule, Generic[Eval_X, Infer_X, Infer_Y], ABC):
+    """
+    Base class to define the train/validation/test/predict loops for a model.
+
+    Parameters
+    ----------
+    optimizer : callable
+        A factory function that constructs a new :class:`Optimizer` instance for
+        training the model.
+    scheduler : callable
+        A factory function that constructs a new :class:`LRScheduler` instance for
+        training the model.
+    """
     def __init__(
         self,
         *,

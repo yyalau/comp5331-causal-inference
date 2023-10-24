@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+
 from torch.utils.data import DataLoader
 import lightning.pytorch as pl
 
@@ -8,8 +10,8 @@ from ..dataops.dataset import DatasetConfig, DatasetPartition, DatasetOutput, Im
 __all__ = ['BaseDataModule']
 
 
-class BaseDataModule(pl.LightningDataModule):
-    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None, **kwargs) -> None:
+class BaseDataModule(pl.LightningDataModule, ABC):
+    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None) -> None:
         super().__init__()
 
         self.ds_config = dataset_config
@@ -41,16 +43,18 @@ class BaseDataModule(pl.LightningDataModule):
         else:
             self.full_ds = dataset_cls(self.ds_config, partition=DatasetPartition.ALL)
 
+    @abstractmethod
     def train_dataloader(self) -> DataLoader[DatasetOutput]:
         raise NotImplementedError
 
+    @abstractmethod
     def val_dataloader(self) -> DataLoader[DatasetOutput]:
         raise NotImplementedError
 
-
+    @abstractmethod
     def test_dataloader(self) -> DataLoader[DatasetOutput]:
         raise NotImplementedError
 
-
+    @abstractmethod
     def predict_dataloader(self) -> DataLoader[DatasetOutput]:
         raise NotImplementedError

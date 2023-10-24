@@ -30,6 +30,15 @@ class AdaINModel(nn.Module, StyleTransferModel):
     """
     Represents an AdaIN (Adaptive Instance Normalization) [1]_ style transfer model for images.
 
+    Parameters
+    ----------
+    encoder : AdaINEncoder
+        The encoder model to use in the network.
+    decoder : AdaINDecoder
+        The decoder model to use in the network.
+    alpha : float, default 1.0
+        The interpolation coefficient between the content features and the style features.
+
     References
     ----------
     .. [1] Xun Huang and Serge Belongie. 2017. Arbitrary style transfer in real-time with adaptive

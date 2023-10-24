@@ -10,7 +10,7 @@ __all__ = ['AdaINDataModule']
 
 
 class AdaINDataModule(BaseDataModule):
-    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None, **kwargs) -> None:
+    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None) -> None:
         super().__init__(dataset_config, max_batches)
 
     def train_dataloader(self) -> DataLoader[DatasetOutput]:
