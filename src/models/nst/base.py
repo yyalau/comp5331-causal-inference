@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, TypeAlias, TypedDict
+from typing import Protocol, TypeAlias, TypedDict, runtime_checkable
 
 import torch
 
@@ -31,6 +31,7 @@ A batch of style-transferred images.
 Shape: `(batch_size, num_channels, depth, height, width)`
 """
 
+@runtime_checkable
 class StyleTransferModel(NNModule[StyleTransfer_X, StyleTransfer_Y], Protocol):
     """
     Represents a style transfer model for images.

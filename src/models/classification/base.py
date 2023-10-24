@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, TypeAlias
+from typing import Protocol, TypeAlias, runtime_checkable
 
 import torch
 
@@ -16,6 +16,7 @@ A batch of class probabilities.
 Shape: `(batch_size, num_classes)`
 """
 
+@runtime_checkable
 class ClassificationModel(NNModule[X_contra, Classification_Y], Protocol[X_contra]):
     """
     Represents a classification model.

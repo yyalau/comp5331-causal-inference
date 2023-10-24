@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, TypedDict
+from typing import Protocol, TypedDict, runtime_checkable
 
 import torch
 
@@ -24,6 +24,7 @@ class FA_X(TypedDict):
     Shape: `(batch_size, num_channels, depth, height, width)`
     """
 
+@runtime_checkable
 class FAModel(ClassificationModel[FA_X], Protocol):
     """
     Represents a FA (Front-door Adjustment) classifier for images.
