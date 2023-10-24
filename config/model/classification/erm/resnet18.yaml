@@ -1,0 +1,12 @@
+- classifier:
+  - class_path: src.models.classification.erm.ResNet18
+  - init_args:
+    - # Parameters
+- optimizer:
+  - class_path: Adam
+  - init_args:
+    - # Parameters
+- scheduler:
+  - class_path: CosineAnnealingLR
+  - init_args:
+    - # Parameters
