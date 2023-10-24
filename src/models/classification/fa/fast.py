@@ -25,7 +25,7 @@ class FAST(nn.Module, FAModel):
        <https://doi.org/10.1145/3580305.3599270>
     """
     def __init__(self,
-                style_transfer: StyleTransferModel,
+                nst: StyleTransferModel,
                 classifer: ERMModel,
                 device: str = 'cpu', # "cpu" for cpu, "cuda" for gpu
                 beta: float = 0.2, # interpolation coefficient
@@ -37,10 +37,14 @@ class FAST(nn.Module, FAModel):
                 ) -> None:
         super(FAST).__init__()
 
-        self.style_transfer = style_transfer(gamma, training, scr_temperature).to(device)
+        self.nst: StyleTransferModel = nst(gamma, training, scr_temperature).to(device)
         self.classifier = classifer
         self.beta = beta
         self.normalization = Normalize(mean = pixel_mean, std = pixel_std)
+
+        # The NST model is considered frozen when training by FA
+        for p in self.nst.parameters():
+            p.requires_grad = False
 
     def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')
@@ -49,7 +53,7 @@ class FAST(nn.Module, FAModel):
         # transferred_contents: Tensor = self.style_transfer(content, styles)
         fx_tildes = []
         for x_prime in styles:
-            x_tilde = self.style_transfer(content, x_prime)
+            x_tilde = self.nst(content, x_prime)
             fx_tilde = self.classifier(self.normalization(x_tilde))
             fx_tildes.append(fx_tilde)
 
