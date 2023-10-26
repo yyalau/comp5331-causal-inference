@@ -2,3 +2,6 @@ __pycache__/
 
 /data/
 /experiments/
+
+run_nst.sh
+run_erm.sh

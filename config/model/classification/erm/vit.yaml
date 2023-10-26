@@ -1,0 +1,21 @@
+network:
+  class_path: src.models.classification.erm.vit
+  init_args:
+    image_size: 1
+    num_classes: 1
+    dim: 1
+    depth: 1
+    heads: 1
+    mlp_dim: 1
+    pool: 'cls' # ['cls', 'mean'] 
+    channels: 3
+    dim_head: 64 
+    dropout: 0.
+    emb_dropout: 0.
+
+optimizer:
+  class_path: torch.optim.Adam
+scheduler:
+  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  init_args:
+    step_size: 30
