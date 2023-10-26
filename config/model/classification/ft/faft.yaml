@@ -1,8 +1,7 @@
 network:
-  class_path: src.models.classification.erm.ResNet18
+  class_path: src.models.classification.fa.faft
   init_args:
-    num_classes: 0
-    pretrained: True
+    classifie: src.models.classification.erm.ResNet18
 optimizer:
   class_path: torch.optim.sgd
 scheduler:

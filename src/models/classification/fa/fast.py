@@ -40,7 +40,7 @@ class FAST(nn.Module, FAModel):
     def __init__(
         self,
         nst: StyleTransferModel,
-        classifer: ERMModel,
+        classifier: ERMModel,
         beta: float = 0.2,
         pixel_mean: tuple[float, float, float] = (0.5, 0.5, 0.5),
         pixel_std: tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -48,7 +48,7 @@ class FAST(nn.Module, FAModel):
         super().__init__()
 
         self.nst = nst
-        self.classifier = classifer
+        self.classifier = classifier
         self.beta = beta
         self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
 

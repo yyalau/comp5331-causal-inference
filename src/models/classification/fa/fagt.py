@@ -43,7 +43,7 @@ class FAGT(nn.Module, FAModel):
     def __init__(
         self,
         nst: StyleTransferModel,
-        classifer: ERMModel,
+        classifier: ERMModel,
         eta: float = 2.0,
         beta: float = 0.2,
         pixel_mean: tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -53,7 +53,7 @@ class FAGT(nn.Module, FAModel):
 
         self.fst = FourierMix(eta)
         self.nst = nst
-        self.classifier = classifer
+        self.classifier = classifier
         self.beta = beta
         self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
 

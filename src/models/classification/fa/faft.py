@@ -42,7 +42,7 @@ class FAFT(nn.Module, FAModel):
     """
     def __init__(
         self,
-        classifer: ERMModel,
+        classifier: ERMModel,
         eta: float = 2.0,
         beta: float = 0.2,
         pixel_mean: tuple[float, float, float] = (0.5, 0.5, 0.5),
@@ -51,7 +51,7 @@ class FAFT(nn.Module, FAModel):
         super().__init__()
 
         self.style_transfer = FourierMix(eta)
-        self.classifier = classifer
+        self.classifier = classifier
         self.beta = beta
         self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
 

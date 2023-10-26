@@ -1,16 +1,14 @@
 # from torchvision.models import resnet18
 from __future__ import annotations
 
-from typing import Literal, TypeAlias, TypeVar
-
 import torch
 from torch import nn
 from torch.utils import model_zoo
 
-from einops import rearrange, repeat
-from einops.layers.torch import Rearrange
+# from einops import rearrange, repeat
+# from einops.layers.torch import Rearrange
 
-from .base import ERM_X, ERMModel
+from .base import ERMModel
 
 __all__ = ['ResNet18']
 
@@ -22,7 +20,7 @@ model_urls = {
     "resnet152": "https://download.pytorch.org/models/resnet152-b121ed2d.pth",
 }
 
-def conv3x3(in_planes, out_planes, stride=1):
+def conv3x3(in_planes: int, out_planes: int, stride: int =1):
     """3x3 convolution with padding"""
     return nn.Conv2d(
         in_planes,
@@ -36,7 +34,7 @@ def conv3x3(in_planes, out_planes, stride=1):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes: int, planes: int, stride: int=1, downsample =None):
         super().__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -46,7 +44,7 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-    def forward(self, x):
+    def forward(self, x:torch.Tensor):
         residual = x
 
         out = self.conv1(x)
@@ -74,11 +72,11 @@ class ResNet(nn.Module, ERMModel):
         *,
         block,
         layers,
-        ms_class=None,
-        ms_layers=[],
-        ms_p=0.5,
-        ms_a=0.1,
-        **kwargs
+        # ms_class=None,
+        # ms_layers=[],
+        # ms_p=0.5,
+        # ms_a=0.1,
+        # **kwargs
     ):
         self.inplanes = 64
         super().__init__()
@@ -99,20 +97,17 @@ class ResNet(nn.Module, ERMModel):
 
         self._out_features = 512 * block.expansion
 
-        self.mixstyle = None
-        if ms_layers:
-            self.mixstyle = ms_class(p=ms_p, alpha=ms_a)
-            for layer_name in ms_layers:
-                assert layer_name in ["layer1", "layer2", "layer3"]
-            print(
-                f"Insert {self.mixstyle.__class__.__name__} after {ms_layers}"
-            )
-        self.ms_layers = ms_layers
+        # self.mixstyle = None
+        # if ms_layers:
+        #     self.mixstyle = ms_class(p=ms_p, alpha=ms_a)
+        #     for layer_name in ms_layers:
+        #         assert layer_name in ["layer1", "layer2", "layer3"]
+        #     print(
+        #         f"Insert {self.mixstyle.__class__.__name__} after {ms_layers}"
+        #     )
+        # self.ms_layers = ms_layers
 
         self._init_params()
-
-    def register_fc(self, linear_layer):
-        self.fc = linear_layer
     
     @property
     def out_features(self):
@@ -138,7 +133,7 @@ class ResNet(nn.Module, ERMModel):
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample))
         self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
+        for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes))
 
         return nn.Sequential(*layers)
@@ -162,7 +157,7 @@ class ResNet(nn.Module, ERMModel):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-    def featuremaps(self, x):
+    def featuremaps(self, x: torch.Tensor):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -178,17 +173,17 @@ class ResNet(nn.Module, ERMModel):
             x = self.mixstyle(x)
         return self.layer4(x)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         f = self.featuremaps(x)
         v = self.global_avgpool(f)
         return v.view(v.size(0), -1)
 
 
-def init_pretrained_weights(model, model_url):
+def init_pretrained_weights(model: ResNet, model_url: str):
     pretrain_dict = model_zoo.load_url(model_url)
     model.load_state_dict(pretrain_dict, strict=False)
 
-def resnet18(pretrained=True, **kwargs):
+def resnet18(pretrained: bool =True):
     model = ResNet(block=BasicBlock, layers=[2, 2, 2, 2])
 
     if pretrained:
@@ -201,7 +196,7 @@ class ResNet18(nn.Module, ERMModel):
     Represents a pre-trained ResNet18 Backbone for PACS and Office-Home.
     """
 
-    def __init__(self, cfg, num_classes, pretrained=True, **kwargs):
+    def __init__(self, num_classes: int, pretrained: bool = True, *):
         super().__init__()
         self.backbone = resnet18(pretrained)
         fdim = self.backbone.out_features
@@ -210,7 +205,7 @@ class ResNet18(nn.Module, ERMModel):
         if num_classes > 0:
             self.classifier = nn.Linear(fdim, num_classes)
 
-    def forward(self, x, return_feature=False):
+    def forward(self, x: torch.Tensor, return_feature: bool =False):
         f = self.backbone(x)
 
         if self.classifier is None:
