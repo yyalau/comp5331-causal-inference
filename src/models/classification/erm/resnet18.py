@@ -196,8 +196,9 @@ class ResNet18(nn.Module, ERMModel):
     Represents a pre-trained ResNet18 Backbone for PACS and Office-Home.
     """
 
-    def __init__(self, num_classes: int, pretrained: bool = True, *):
+    def __init__(self, num_classes: int, *, pretrained: bool = True):
         super().__init__()
+
         self.backbone = resnet18(pretrained)
         fdim = self.backbone.out_features
 

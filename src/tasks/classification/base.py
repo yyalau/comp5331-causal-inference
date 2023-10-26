@@ -36,6 +36,7 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], X, Classification_
         self,
         classifier: ClassificationModel[X],
         *,
+        num_classes: int,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
     ) -> None:
@@ -48,10 +49,10 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], X, Classification_
 
         self.loss = F.cross_entropy
         self.metrics = {
-            'accuracy': Accuracy(task='multiclass'),
-            'precision': Precision(task='multiclass'),
-            'recall': Recall(task='multiclass'),
-            'f1': F1Score(task='multiclass'),
+            'accuracy': Accuracy(task='multiclass', num_classes=num_classes),
+            'precision': Precision(task='multiclass', num_classes=num_classes),
+            'recall': Recall(task='multiclass', num_classes=num_classes),
+            'f1': F1Score(task='multiclass', num_classes=num_classes),
         }
 
     def _eval_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
