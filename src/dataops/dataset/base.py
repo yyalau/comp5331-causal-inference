@@ -84,7 +84,7 @@ class ImageDataset(Dataset[DatasetOutput]):
 
     @classmethod
     @abstractmethod
-    def validate(cls, domains: List[str]) -> None:
+    def validate_domains(cls, domains: List[str]) -> None:
         raise NotImplementedError()
 
     @classmethod
@@ -108,8 +108,8 @@ class ImageDataset(Dataset[DatasetOutput]):
     def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
         super().__init__()
         self.validate_dataset_name()
-        self.validate(config.train_val_domains)
-        self.validate(config.test_domains)
+        self.validate_domains(config.train_val_domains)
+        self.validate_domains(config.test_domains)
         self.lazy = config.lazy
         self.partition = partition
         self.num_domains_to_sample = config.num_domains_to_sample
