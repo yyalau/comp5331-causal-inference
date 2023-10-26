@@ -34,7 +34,7 @@ def conv3x3(in_planes: int, out_planes: int, stride: int =1):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes: int, planes: int, stride: int=1, downsample =None):
+    def __init__(self, inplanes: int, planes: int, stride: int = 1, downsample = None):
         super().__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -183,7 +183,7 @@ def init_pretrained_weights(model: ResNet, model_url: str):
     pretrain_dict = model_zoo.load_url(model_url)
     model.load_state_dict(pretrain_dict, strict=False)
 
-def resnet18(pretrained: bool =True):
+def resnet18(pretrained: bool = True):
     model = ResNet(block=BasicBlock, layers=[2, 2, 2, 2])
 
     if pretrained:
@@ -195,8 +195,7 @@ class ResNet18(nn.Module, ERMModel):
     """
     Represents a pre-trained ResNet18 Backbone for PACS and Office-Home.
     """
-
-    def __init__(self, num_classes: int, *, pretrained: bool = True):
+    def __init__(self, *, num_classes: int, pretrained: bool = True):
         super().__init__()
 
         self.backbone = resnet18(pretrained)
@@ -206,7 +205,7 @@ class ResNet18(nn.Module, ERMModel):
         if num_classes > 0:
             self.classifier = nn.Linear(fdim, num_classes)
 
-    def forward(self, x: torch.Tensor, return_feature: bool =False):
+    def forward(self, x: torch.Tensor, return_feature: bool = False):
         f = self.backbone(x)
 
         if self.classifier is None:

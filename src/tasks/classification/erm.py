@@ -20,11 +20,13 @@ class ERMTask(ClassificationTask[ERM_X]):
         self,
         classifier: ERMModel,
         *,
+        num_classes: int,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
     ) -> None:
         super().__init__(
             classifier=classifier,
+            num_classes=num_classes,
             optimizer=optimizer,
             scheduler=scheduler,
         )
