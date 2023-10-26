@@ -1,0 +1,22 @@
+classifier:
+  class_path: src.models.classification.fa.FAGT
+  init_args:
+    nst:
+      class_path: src.models.nst.ada_in.AdaINModel
+      init_args: 
+        encoder: src.models.nst.AdaINEncoder
+        decoder: src.models.nst.AdaINDecoder
+    classifier:
+      class_path: src.models.classification.erm.ResNet18
+      init_args:
+        num_classes: 100
+        pretrained: True
+num_classes: 100
+optimizer:
+  class_path: torch.optim.SGD
+  init_args:
+    lr: 1e-5
+scheduler:
+  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  init_args:
+    T_max: 30
