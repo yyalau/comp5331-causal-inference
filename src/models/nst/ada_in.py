@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import Protocol
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from ..base import NNModule
 
@@ -10,10 +10,11 @@ from .base import StyleTransfer_X, StyleTransfer_Y, StyleTransferModel
 
 __all__ = ['AdaINEncoder', 'AdaINDecoder', 'AdaINModel']
 
-class AdaINEncoder(NNModule[torch.Tensor, torch.Tensor]):
-    
+
+class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     def __init__(self, pretrained: bool = True):
         super().__init__()
+
         self.vgg19 = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=3, kernel_size=1),
             nn.ReflectionPad2d(padding=1),
@@ -70,7 +71,6 @@ class AdaINEncoder(NNModule[torch.Tensor, torch.Tensor]):
             nn.ReLU(inplace=True)
             )
 
-    
     def get_states(self, batch: torch.Tensor) -> list[torch.Tensor]:
         """
         Similar to :meth:`torch.nn.Module.__call__`, but returns the output of
@@ -80,16 +80,17 @@ class AdaINEncoder(NNModule[torch.Tensor, torch.Tensor]):
         states = []
         for i, layer in enumerate(self.vgg19.features):
             batch = layer(batch)
-            
+
             if i in [3, 10, 17, 30]:
                 states.append(batch)
+
         return states
-    
-    def forward(self, batch: torch.Tensor) -> torch.Tensor:
-        return self.get_states(batch)[:-1]
-    
-class AdaINDecoder(NNModule[torch.Tensor, torch.Tensor]):
-    
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.get_states(x)[-1]
+
+
+class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     def __init__(self):
         super().__init__()
 
@@ -109,7 +110,7 @@ class AdaINDecoder(NNModule[torch.Tensor, torch.Tensor]):
         self.conv1_1 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
         self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=0)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         out = self.UpSample(F.relu(self.conv4_1(self.padding(x))))
 
         out = F.relu(self.conv3_1(self.padding(out)))
@@ -123,7 +124,6 @@ class AdaINDecoder(NNModule[torch.Tensor, torch.Tensor]):
         out = F.relu(self.conv1_1(self.padding(out)))
         out = self.conv1_2(self.padding(out))
         return out
-        
 
 
 class AdaINModel(nn.Module, StyleTransferModel):
