@@ -20,7 +20,7 @@ class DigitsDomains(str, Enum):
 
 class DigitsDGDataset(ImageDataset):
     data_url: str = "https://drive.google.com/u/0/uc?id=15V7EsHfCcfbKgsDmzQKj_DfXt_XYp_P7&export=download"
-    dataset_name = SupportedDatasets.DIGITS
+    dataset_name = SupportedDatasets.DIGITS.value
 
     @classmethod
     def validate_domains(cls, domains: List[str]) -> None:
@@ -45,22 +45,24 @@ class DigitsDGDataset(ImageDataset):
 
         if self.partition is DatasetPartition.ALL:
             for domain in domain_names:
-                ds_folders.append(Path(f"{data_root_path}/{domain}/train/"))
-                ds_folders.append(Path(f"{data_root_path}/{domain}/val/"))
+                ds_folders.append(Path(f"{data_root_path}/{domain}/train"))
+                ds_folders.append(Path(f"{data_root_path}/{domain}/val"))
         else:
             for domain in domain_names:
-                ds_folders.append(Path(f"{data_root_path}/{domain}/{self.partition.value}/"))
+                ds_folders.append(Path(f"{data_root_path}/{domain}/{self.partition.value}"))
 
         for folder in ds_folders:
             if folder.exists() and folder.is_dir():
-                for img_path in folder.iterdir():
-                    if img_path.is_file():
-                        label = int(folder.name)
-                        image_loader = create_image_loader(
-                            img_path, self.lazy
-                        )
-                        domain = img_path.parent.parent.name
-                        image_data_loader = ImageReader(image_loader, label)
-                        reference_label_map[domain].append(image_data_loader)
+                for label_dir in folder.iterdir():
+                    if label_dir.exists() and label_dir.is_dir():
+                        for img_path in label_dir.iterdir():
+                            if img_path.is_file():
+                                label = int(img_path.parent.name)
+                                image_loader = create_image_loader(
+                                    img_path, self.lazy
+                                )
+                                domain = folder.parent.name
+                                image_data_loader = ImageReader(image_loader, label)
+                                reference_label_map[domain].append(image_data_loader)
 
         return reference_label_map

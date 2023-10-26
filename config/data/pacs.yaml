@@ -5,6 +5,8 @@ dataset_config:
   train_val_domains: ['art_painting', 'cartoon', 'photo']
   test_domains: ['cartoon', 'photo','sketch']
   lazy: True
-  rand_augment: [1.0, 1.0]
+  rand_augment: [1, 1]
+  resize_height: 224
+  resize_width: 224
   num_domains_to_sample: 3
   num_ood_samples: 2

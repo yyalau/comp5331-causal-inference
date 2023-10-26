@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from torch.utils.data import Dataset
 import torch
+import torchvision.transforms as T
 
 from typing import List, Optional, Tuple
 from typing_extensions import TypeAlias
@@ -37,12 +38,12 @@ Tensor: TypeAlias = torch.Tensor
 
 
 class SupportedDatasets(str, Enum):
-    PACS = 'PACS'
-    OFFICE = 'OfficeHome'
-    DIGITS = 'DigitsDG'
+    PACS = 'pacs'
+    OFFICE = 'OfficeHomeDataset_10072016'
+    DIGITS = 'digits_dg'
 
 class DatasetOutput(BaseModel):
-    image: npt.NDArray[np.float32]
+    image: Tensor
     label: int
     domain: str
 
@@ -57,7 +58,9 @@ class DatasetConfig:
     train_val_domains: List[str]
     test_domains: List[str]
     lazy: bool
-    rand_augment: List[float]
+    rand_augment: List[int]
+    resize_height: int
+    resize_width: int
     num_domains_to_sample: Optional[int]
     num_ood_samples: Optional[int]
 
@@ -88,15 +91,14 @@ class ImageDataset(Dataset[DatasetOutput]):
         raise NotImplementedError()
 
     @classmethod
-    def download(cls, destination: str) -> str:
+    def download(cls, destination: str) -> None:
         print(f"Downloading data from {cls.data_url}")
 
         file_path = download_from_gdrive(
             cls.data_url, f"{destination}/{cls.dataset_name}.zip"
         )
         print(f"Extracting files from {file_path}")
-
-        return unzip(file_path)
+        unzip(file_path)
 
     @classmethod
     def validate_dataset_name(cls):
@@ -115,9 +117,11 @@ class ImageDataset(Dataset[DatasetOutput]):
         self.num_domains_to_sample = config.num_domains_to_sample
         self.num_ood_samples = config.num_ood_samples
         self.dataset_path_root = config.dataset_path_root
+
         if not config.dataset_path_root.exists():
-            data_path = self.download(config.dataset_path_root.parent.name)
-            config.dataset_path_root = Path(data_path)
+            parent_root = config.dataset_path_root.parent.name
+            self.download(parent_root)
+            config.dataset_path_root = Path(f'{parent_root}/{self.dataset_name}')
 
         self.domains = (
             config.test_domains
@@ -132,6 +136,8 @@ class ImageDataset(Dataset[DatasetOutput]):
         self.rand_augment = config.rand_augment
         assert len(self.rand_augment) == 2
         self.transforms = RandAugment(*self.rand_augment)
+        self.height = config.resize_height
+        self.width = config.resize_width
 
     def __getitem__(self, idx: int) -> DatasetOutput:
         """
@@ -145,9 +151,19 @@ class ImageDataset(Dataset[DatasetOutput]):
     def __len__(self) -> int:
         return self.len
 
-    def _preprocess(self, X: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+    def _preprocess(self, X: npt.NDArray[np.float32]) -> Tensor:
+
         image = Image.fromarray(X)
-        return np.array(self.transforms(image))
+
+        transform = T.Compose([
+            T.Resize((self.height, self.width), interpolation=T.InterpolationMode.BILINEAR),
+            T.ToTensor()
+        ])
+
+        resized_img = transform(self.transforms(image))
+        assert isinstance(resized_img, Tensor)
+
+        return resized_img
 
     def _ood_sample(
         self, domain_list: List[str], num_domains_to_sample: int, num_ood_samples: int
@@ -170,7 +186,7 @@ class ImageDataset(Dataset[DatasetOutput]):
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]
     ) -> Tuple[Tensor, Tensor, List[str]]:
-        content = torch.from_numpy(np.array([data.image for data in batch]))
+        content = torch.stack([data.image for data in batch])
         labels = torch.from_numpy((np.array([data.label for data in batch])))
         domains = [data.domain for data in batch]
         return content, labels, domains

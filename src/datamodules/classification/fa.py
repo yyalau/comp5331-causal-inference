@@ -17,10 +17,10 @@ class FADataModule(BaseDataModule):
         return DataLoader(self.train_ds, batch_size=self.max_batches, shuffle=True, collate_fn=self.train_ds.collate_fa)
 
     def val_dataloader(self) -> DataLoader[DatasetOutput]:
-        return DataLoader(self.val_ds, batch_size=self.max_batches, shuffle=True, collate_fn=self.train_ds.collate_fa)
+        return DataLoader(self.val_ds, batch_size=self.max_batches, shuffle=True, collate_fn=self.val_ds.collate_fa)
 
     def test_dataloader(self) -> DataLoader[DatasetOutput]:
-        return DataLoader(self.test_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_fa)
+        return DataLoader(self.test_ds, batch_size=self.max_batches, collate_fn=self.test_ds.collate_fa)
 
     def predict_dataloader(self) -> DataLoader[DatasetOutput]:
-        return DataLoader(self.full_ds, batch_size=self.max_batches, collate_fn=self.train_ds.collate_fa)
+        return DataLoader(self.full_ds, batch_size=self.max_batches, collate_fn=self.full_ds.collate_fa)

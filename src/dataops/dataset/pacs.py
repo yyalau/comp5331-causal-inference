@@ -20,7 +20,7 @@ class PACSDomains(str, Enum):
 
 class PACSDataset(ImageDataset):
     data_url: str = "https://drive.google.com/uc?id=1m4X4fROCCXMO0lRLrr6Zz9Vb3974NWhE"
-    dataset_name = SupportedDatasets.PACS
+    dataset_name: str = SupportedDatasets.PACS.value
 
     @classmethod
     def validate_domains(cls, domains: List[str]) -> None:

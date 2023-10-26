@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import gdown
 import tarfile
-from typing import Optional
 import zipfile
-
+from typing import Optional
 from pathlib import Path
 
-def unzip(file_path: str) -> str:
+def unzip(file_path: str) -> None:
     extract_dir = Path(file_path).parent.name
 
     if file_path.endswith(".zip"):
@@ -21,9 +20,6 @@ def unzip(file_path: str) -> str:
     elif file_path.endswith(".tar.gz"):
         with tarfile.open(file_path, "r:gz") as tar_gz_ref:
             tar_gz_ref.extractall(extract_dir)
-
-    return extract_dir
-
 
 def download_from_gdrive(url: str, destination: str) -> str:
     destination_path = Path(destination)

@@ -5,6 +5,8 @@ dataset_config:
   train_val_domains: ['mnist', 'mnist_m', 'svhn']
   test_domains: ['mnist', 'mnist_m', 'syn']
   lazy: True
-  rand_augment: [1.0, 1.0]
+  rand_augment: [1, 1]
+  resize_height: 32
+  resize_width: 32
   num_domains_to_sample: 3
   num_ood_samples: 2

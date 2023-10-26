@@ -29,7 +29,7 @@ class OfficHomeDomains(str, Enum):
 
 class OfficeHomeDataset(ImageDataset):
     data_url: str = 'https://drive.google.com/u/0/uc?id=0B81rNlvomiwed0V1YUxQdC1uOTg&export=download&resourcekey=0-2SNWq0CDAuWOBRRBL7ZZsw'
-    dataset_name = SupportedDatasets.OFFICE
+    dataset_name = SupportedDatasets.OFFICE.value
 
     @classmethod
     def validate_domains(cls, domains: List[str]) -> None:
@@ -47,11 +47,12 @@ class OfficeHomeDataset(ImageDataset):
         train_ratio: float = 0.7,
         test_ratio: float = 0.15,
     ) -> None:
-        super().__init__(config, partition)
         self.seed = seed
         self.train_ratio = train_ratio
         self.test_ratio = test_ratio
         self.labels = {"Alarm_Clock": 0, "Backpack": 1, "Batteries": 2, "Bed": 3, "Bike": 4, "Bottle": 5, "Bucket": 6, "Calculator": 7, "Calendar": 8, "Candles": 9, "Chair": 10, "Clipboards": 11, "Computer": 12, "Couch": 13, "Curtains": 14, "Desk_Lamp": 15, "Drill": 16, "Eraser": 17, "Exit_Sign": 18, "Fan": 19, "File_Cabinet": 20, "Flipflops": 21, "Flowers": 22, "Folder": 23, "Fork": 24, "Glasses": 25, "Hammer": 26, "Helmet": 27, "Kettle": 28, "Keyboard": 29, "Knives": 30, "Lamp_Shade": 31, "Laptop": 32, "Marker": 33, "Monitor": 34, "Mop": 35, "Mouse": 36, "Mug": 37, "Notebook": 38, "Oven": 39, "Pan": 40, "Paper_Clip": 41, "Pen": 42, "Pencil": 43, "Postit_Notes": 44, "Printer": 45, "Push_Pin": 46, "Radio": 47, "Refrigerator": 48, "Ruler": 49, "Scissors": 50, "Screwdriver": 51, "Shelf": 52, "Sink": 53, "Sneakers": 54, "Soda": 55, "Speaker": 56, "Spoon": 57, "TV": 58, "Table": 59, "Telephone": 60, "ToothBrush": 61, "Toys": 62, "Trash_Can": 63, "Webcam": 64}
+
+        super().__init__(config, partition)
 
     def _fetch_data(self) -> Mapping[str, List[ImageReader]]:
         split_data = self._split_data()
@@ -70,7 +71,7 @@ class OfficeHomeDataset(ImageDataset):
             data_to_fetch.extend(test_data)
             data_to_fetch.extend(val_data)
 
-        reference_label_map = defaultdict()
+        reference_label_map = defaultdict(list)
 
         for image_path in data_to_fetch:
             label = self.labels[image_path.parent.name]

@@ -37,9 +37,9 @@ class BaseDataModule(pl.LightningDataModule, ABC):
             self.val_ds = dataset_cls(self.ds_config, partition=DatasetPartition.VALIDATE)
         elif stage == 'test':
             if ds_name is SupportedDatasets.DIGITS:
-                raise ValueError('Test split is not supported for DigitsDG dataset')
-
-            self.test_ds = dataset_cls(self.ds_config, partition=DatasetPartition.TEST)
+                self.test_ds = dataset_cls(self.ds_config, partition=DatasetPartition.VALIDATE)
+            else:
+                self.test_ds = dataset_cls(self.ds_config, partition=DatasetPartition.TEST)
         else:
             self.full_ds = dataset_cls(self.ds_config, partition=DatasetPartition.ALL)
 
