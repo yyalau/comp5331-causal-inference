@@ -1,11 +1,10 @@
-data:
-  max_batches: 2
-  dataset_config:
-    dataset_path_root: "./data/OfficeHomeDataset_100072016"
-    dataset_name: "OfficeHome"
-    train_val_domains: ['Art', 'Clipart', 'Product']
-    test_domains: ['Art', 'Clipart', 'Real World']
-    lazy: True
-    rand_augment: [1.0, 1.0]
-    num_domains_to_sample: 3
-    num_ood_samples: 2
+max_batches: 2
+dataset_config:
+  dataset_path_root: "./data/OfficeHomeDataset_100072016"
+  dataset_name: "OfficeHome"
+  train_val_domains: ['Art', 'Clipart', 'Product']
+  test_domains: ['Art', 'Clipart', 'Real World']
+  lazy: True
+  rand_augment: [1.0, 1.0]
+  num_domains_to_sample: 3
+  num_ood_samples: 2

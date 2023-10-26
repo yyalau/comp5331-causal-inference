@@ -1,0 +1,12 @@
+network: 
+  class_path: AdaINModel
+  init_args: 
+    encoder: src.models.nst.AdaINEncoder
+    decoder: src.models.nst.AdaINDecoder
+optimizer:
+  class_path: torch.optim.Adam
+scheduler:
+  class_path: torch.optim.lr_scheduler.StepLR
+  init_args:
+    step_size: 30
+  
