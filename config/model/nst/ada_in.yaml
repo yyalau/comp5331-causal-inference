@@ -1,5 +1,5 @@
 network: 
-  class_path: AdaINModel
+  class_path: src.models.nst.ada_in.AdaINModel
   init_args: 
     encoder: src.models.nst.AdaINEncoder
     decoder: src.models.nst.AdaINDecoder

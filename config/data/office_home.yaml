@@ -8,4 +8,3 @@ dataset_config:
   rand_augment: [1.0, 1.0]
   num_domains_to_sample: 3
   num_ood_samples: 2
-`
