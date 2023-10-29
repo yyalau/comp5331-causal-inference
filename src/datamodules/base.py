@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from torch.utils.data import DataLoader
 import lightning.pytorch as pl
@@ -10,7 +10,17 @@ from ..dataops.dataset import DatasetConfig, DatasetPartition, DatasetOutput, Im
 __all__ = ['BaseDataModule']
 
 
-class BaseDataModule(pl.LightningDataModule, ABC):
+class BaseDataModule(pl.LightningDataModule):
+    """
+    Parameters
+    ----------
+    dataset_config : DatasetConfig
+        The dataset parameters to run.
+    max_batches : int | None
+        The maximum number of batches to
+        train/validate the data before terminating.
+        Defaults to None.
+    """
     def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None) -> None:
         super().__init__()
 

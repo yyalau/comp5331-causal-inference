@@ -32,15 +32,22 @@ from ..func import (
 )
 from ..utils import download_from_gdrive, unzip
 
-__all__ = ["ImageDataset", 'SupportedDatasets', "DatasetPartition", "DatasetConfig", "DatasetOutput"]
+__all__ = [
+    "ImageDataset",
+    "SupportedDatasets",
+    "DatasetPartition",
+    "DatasetConfig",
+    "DatasetOutput",
+]
 
 Tensor: TypeAlias = torch.Tensor
 
 
 class SupportedDatasets(str, Enum):
-    PACS = 'pacs'
-    OFFICE = 'OfficeHomeDataset_10072016'
-    DIGITS = 'digits_dg'
+    PACS = "pacs"
+    OFFICE = "OfficeHomeDataset_10072016"
+    DIGITS = "digits_dg"
+
 
 class DatasetOutput(BaseModel):
     image: Tensor
@@ -53,6 +60,35 @@ class DatasetOutput(BaseModel):
 
 @dataclass(frozen=False)
 class DatasetConfig:
+    """
+    Parameters
+    ----------
+    dataset_path_root : Path
+        The path to the root directory containing the data.
+    dataset_name : SupportedDatasets
+        The name of the dataset.
+    train_val_domains : List[str]
+        The domains to use for training and validation.
+    test_domains: List[str]
+        The domains to use for testing
+    lazy : bool
+        Lazy initialization of the images.
+    rand_augment : List[int]
+        Alpha and beta parameters for random augmentation.
+    resize_height : int
+        Image height after resizing.
+    resize_width : int
+        Image width after resizing.
+    num_domains_to_sample : int
+        The number of domains to sample from for
+        each training, validation or testing sample.
+        Note that the value of this param must be
+        less than the number of domains listed in
+        train_val_domains and test_domains.
+    num_ood_samples : int
+        Number of images to sample per ood domain.
+    """
+
     dataset_path_root: Path
     dataset_name: SupportedDatasets
     train_val_domains: List[str]
@@ -69,7 +105,8 @@ class DatasetPartition(str, Enum):
     TRAIN = "train"
     TEST = "test"
     VALIDATE = "val"
-    ALL = 'full'
+    ALL = "full"
+
 
 @dataclass
 class ImageReader:
@@ -105,13 +142,17 @@ class ImageDataset(Dataset[DatasetOutput]):
         try:
             SupportedDatasets(cls.dataset_name)
         except ValueError:
-            raise ValueError('not supported dataset {cls.dataset_name}')
+            raise ValueError("not supported dataset {cls.dataset_name}")
 
-    def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
-        super().__init__()
+    def _validate_config_params(self, config: DatasetConfig):
         self.validate_dataset_name()
         self.validate_domains(config.train_val_domains)
         self.validate_domains(config.test_domains)
+
+    def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
+        super().__init__()
+        self._validate_config_params(config)
+
         self.lazy = config.lazy
         self.partition = partition
         self.num_domains_to_sample = config.num_domains_to_sample
@@ -121,7 +162,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         if not config.dataset_path_root.exists():
             parent_root = config.dataset_path_root.parent.name
             self.download(parent_root)
-            config.dataset_path_root = Path(f'{parent_root}/{self.dataset_name}')
+            config.dataset_path_root = Path(f"{parent_root}/{self.dataset_name}")
 
         self.domains = (
             config.test_domains
@@ -152,13 +193,17 @@ class ImageDataset(Dataset[DatasetOutput]):
         return self.len
 
     def _preprocess(self, X: npt.NDArray[np.float32]) -> Tensor:
-
         image = Image.fromarray(X)
 
-        transform = T.Compose([
-            T.Resize((self.height, self.width), interpolation=T.InterpolationMode.BILINEAR),
-            T.ToTensor()
-        ])
+        transform = T.Compose(
+            [
+                T.Resize(
+                    (self.height, self.width),
+                    interpolation=T.InterpolationMode.BILINEAR,
+                ),
+                T.ToTensor(),
+            ]
+        )
 
         resized_img = transform(self.transforms(image))
         assert isinstance(resized_img, Tensor)
@@ -208,16 +253,22 @@ class ImageDataset(Dataset[DatasetOutput]):
         self,
         batch: List[DatasetOutput],
     ) -> Tuple[FA_X, Classification_Y]:
+        num_domains_to_sample, num_ood_samples = self._validate_ood_sample_size()
+        content, labels, domains = self._create_tensors_from_batch(batch)
+        styles = self._ood_sample(domains, num_domains_to_sample, num_ood_samples)
+        return FA_X(content=content, styles=styles), labels
+
+    def _validate_ood_sample_size(self) -> Tuple[int, int]:
+        domain_len = len(self.domains)
+
         num_domains_to_sample = self.num_domains_to_sample
         num_ood_samples = self.num_ood_samples
 
         if num_domains_to_sample is None or num_ood_samples is None:
-            raise ValueError('Values for collate are empty')
+            raise ValueError("Values for collate are empty")
 
-        content, labels, domains = self._create_tensors_from_batch(batch)
-        styles = self._ood_sample(
-            domains,
-            num_domains_to_sample,
-            num_ood_samples
-        )
-        return FA_X(content=content, styles=styles), labels
+        if num_domains_to_sample >= domain_len:
+            raise ValueError(
+                f"Cannot sample {num_domains_to_sample} from domain list of length {domain_len}."
+            )
+        return num_domains_to_sample, num_ood_samples
