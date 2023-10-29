@@ -19,8 +19,6 @@ class FAFT(nn.Module, FAModel):
 
     Parameters
     ----------
-    nst : StyleTransferModel
-        The style transfer model to use in the network.
     classifier : ERMModel
         The classifier model to use in the network.
     eta : float, default 2.0
@@ -50,10 +48,13 @@ class FAFT(nn.Module, FAModel):
     ) -> None:
         super().__init__()
 
-        self.style_transfer = FourierMix(eta)
+        self.fst = FourierMix(eta)
         self.classifier = classifier
         self.beta = beta
         self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
+
+    def get_num_classes(self) -> int:
+        return self.classifier.get_num_classes()
 
     def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')
@@ -62,7 +63,7 @@ class FAFT(nn.Module, FAModel):
         # TODO: may need to downsize
         fx_hats = []
         for x_prime in styles:
-            x_hat = self.style_transfer(content, x_prime)
+            x_hat = self.fst(content, x_prime)
             fx_hat = self.classifier(self.normalization(x_hat))
             fx_hats.append(fx_hat)
         fx_hats_avg = torch.stack(fx_hats, dim=0).mean(dim=0)

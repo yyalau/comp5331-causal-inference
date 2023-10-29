@@ -13,7 +13,6 @@ classifier:
     dim_head: 64 
     dropout: 0.
     emb_dropout: 0.
-num_classes: 10
 optimizer:
   class_path: torch.optim.Adam
 scheduler:

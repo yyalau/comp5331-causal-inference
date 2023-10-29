@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 import torch
@@ -10,13 +11,20 @@ from torch.optim.lr_scheduler import LRScheduler
 import lightning.pytorch as pl
 from lightning.pytorch.utilities.types import OptimizerLRSchedulerConfig
 
-__all__ = ['BaseTask']
+__all__ = ['EvalOutput', 'BaseTask']
 
 
-Eval_X = TypeVar('Eval_X')                                  # For model evaluation
-Infer_X, Infer_Y = TypeVar('Infer_X'), TypeVar('Infer_Y')   # For model inference
+@dataclass(frozen=True)
+class EvalOutput:
+    loss: torch.Tensor
+    metrics: dict[str, torch.Tensor]
 
-class BaseTask(pl.LightningModule, Generic[Eval_X, Infer_X, Infer_Y], ABC):
+
+Eval_X, Eval_Out = TypeVar('Eval_X'), TypeVar('Eval_Out', bound=EvalOutput)     # Model evaluation
+Infer_X, Infer_Y = TypeVar('Infer_X'), TypeVar('Infer_Y')                       # Model inference
+
+
+class BaseTask(pl.LightningModule, Generic[Eval_X, Eval_Out, Infer_X, Infer_Y], ABC):
     """
     Base class to define the train/validation/test/predict loops for a model.
 
@@ -41,33 +49,32 @@ class BaseTask(pl.LightningModule, Generic[Eval_X, Infer_X, Infer_Y], ABC):
         self.scheduler = scheduler
 
     @abstractmethod
-    def _eval_step(self, batch: Eval_X, batch_idx: int) -> dict[str, torch.Tensor]:
+    def _eval_step(self, batch: Eval_X, batch_idx: int) -> Eval_Out:
         raise NotImplementedError
 
     @abstractmethod
     def forward(self, batch: Infer_X) -> Infer_Y:  # pyright: ignore[reportIncompatibleMethodOverride]
         raise NotImplementedError
 
-    def training_step(self, batch: Eval_X, batch_idx: int) -> dict[str, torch.Tensor]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        eval_metrics = self._eval_step(batch, batch_idx)
+    def _process_eval_loss_metrics(self, eval_output: EvalOutput, *, prefix: str) -> dict[str, torch.Tensor]:
+        loss_metrics = {'loss': eval_output.loss, **eval_output.metrics}
+        prefixed_loss_metrics = {f'{prefix}{k}': v for k, v in loss_metrics.items()}
 
-        metrics = eval_metrics
-        self.log_dict(metrics)
-        return metrics
+        self.log_dict(prefixed_loss_metrics)
+
+        return prefixed_loss_metrics
+
+    def training_step(self, batch: Eval_X, batch_idx: int) -> dict[str, torch.Tensor]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        eval_output = self._eval_step(batch, batch_idx)
+        return self._process_eval_loss_metrics(eval_output, prefix='')
 
     def validation_step(self, batch: Eval_X, batch_idx: int) -> dict[str, torch.Tensor]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        eval_metrics = self._eval_step(batch, batch_idx)
-
-        metrics = {f'val_{k}': v for k, v in eval_metrics.items()}
-        self.log_dict(metrics)
-        return metrics
+        eval_output = self._eval_step(batch, batch_idx)
+        return self._process_eval_loss_metrics(eval_output, prefix='val_')
 
     def test_step(self, batch: Eval_X, batch_idx: int) -> dict[str, torch.Tensor]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        eval_metrics = self._eval_step(batch, batch_idx)
-
-        metrics = {f'test_{k}': v for k, v in eval_metrics.items()}
-        self.log_dict(metrics)
-        return metrics
+        eval_output = self._eval_step(batch, batch_idx)
+        return self._process_eval_loss_metrics(eval_output, prefix='test_')
 
     def predict_step(self, batch: Infer_X, batch_idx: int, dataloader_idx: int = 0) -> Infer_Y:
         return self(batch)

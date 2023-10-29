@@ -1,8 +1,0 @@
-network:
-  class_path: src.models.classification.fa.faft
-  init_args:
-    classifie: src.models.classification.erm.ResNet18
-optimizer:
-  class_path: torch.optim.sgd
-scheduler:
-  class_path: torch.optim.lr_scheduler.CosineAnnealingLR

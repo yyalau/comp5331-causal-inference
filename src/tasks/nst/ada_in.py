@@ -1,20 +1,29 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 
 import torch
 from torch.nn import functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
+from torch.utils.tensorboard.writer import SummaryWriter
+from lightning.pytorch.loggers import TensorBoardLogger
 
 from ...models.nst import StyleTransfer_X, StyleTransfer_Y, AdaINModel
 
-from ..base import BaseTask
+from ..base import EvalOutput, BaseTask
 
 __all__ = ['AdaINTask', 'StyleTransfer_X', 'StyleTransfer_Y']
 
 
-class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
+@dataclass(frozen=True)
+class AdaINEvalOutput(EvalOutput):
+    x: StyleTransfer_X
+    lazy_y_hat: Callable[[], StyleTransfer_Y]
+
+
+class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, StyleTransfer_Y]):
     """
     Defines the train/validation/test/predict loops for an AdaIN model.
 
@@ -31,6 +40,9 @@ class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
     gamma : float, default 2.0
         The ratio of importance between the style loss and content loss.
         The overall loss is given by `content_loss + gamma * style_loss`.
+    img_log_freq : int, default 64
+        Controls how often the input style (`x_style`), input content (`x_content`) and output (`y_hat`) images are logged to TensorBoard.
+        Specifically, they are logged every `img_log_freq` batches during model evaluation.
     """
     def __init__(
         self,
@@ -39,6 +51,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
         gamma: float = 2.0,
+        img_log_freq: int = 64,
     ) -> None:
         super().__init__(
             optimizer=optimizer,
@@ -54,6 +67,8 @@ class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
             'content_loss': self._content_loss,
             'style_loss': self._style_loss,
         }
+
+        self.img_log_freq = img_log_freq
 
     def _content_loss_fn(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return F.mse_loss(input_, target)
@@ -83,7 +98,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
 
         return content_loss + gamma * style_loss
 
-    def _eval_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+    def _eval_step(self, batch: StyleTransfer_X, batch_idx: int) -> AdaINEvalOutput:
         x = batch
 
         enc_style_states = self.network.encoder.get_states(x['style'])
@@ -97,7 +112,32 @@ class AdaINTask(BaseTask[StyleTransfer_X, StyleTransfer_X, StyleTransfer_Y]):
         loss = self.loss(enc_applied_states, enc_style_states, enc_content)
         metrics = {name: metric(enc_applied_states, enc_style_states, enc_content) for name, metric in self.metrics.items()}
 
-        return {'loss': loss, **metrics}
+        return AdaINEvalOutput(loss=loss, metrics=metrics, x=x, lazy_y_hat=lambda: self.network(batch))
 
     def forward(self, batch: StyleTransfer_X) -> StyleTransfer_Y:
         return self.network(batch)
+
+    def _process_images(self, eval_output: AdaINEvalOutput, *, prefix: str, batch_idx: int) -> None:
+        if batch_idx % self.img_log_freq:
+            return
+
+        if isinstance(self.logger, TensorBoardLogger):
+            writer = self.logger.experiment
+            if isinstance(writer, SummaryWriter):
+                writer.add_images(f'images/x_style/{prefix}{batch_idx}', eval_output.x['style'], self.current_epoch)
+                writer.add_images(f'images/x_content/{prefix}{batch_idx}', eval_output.x['content'], self.current_epoch)
+                writer.add_images(f'images/y_hat/{prefix}{batch_idx}', eval_output.lazy_y_hat(), self.current_epoch)
+            else:
+                raise TypeError('Incorrect type of writer')
+        else:
+            raise TypeError('Incorrect type of logger')
+
+    def validation_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+        eval_output = self._eval_step(batch, batch_idx)
+        self._process_images(eval_output, batch_idx=batch_idx, prefix='val_')
+        return self._process_eval_loss_metrics(eval_output, prefix='val_')
+
+    def test_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+        eval_output = self._eval_step(batch, batch_idx)
+        self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
+        return self._process_eval_loss_metrics(eval_output, prefix='test_')

@@ -61,6 +61,9 @@ class FAGT(nn.Module, FAModel):
         for p in self.nst.parameters():
             p.requires_grad = False
 
+    def get_num_classes(self) -> int:
+        return self.classifier.get_num_classes()
+
     def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')
         styles = input.get('styles')

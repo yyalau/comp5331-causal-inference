@@ -95,6 +95,11 @@ class ViT(nn.Module, ERMModel):
     """
     Represents a ViT (Vision Transformer) [1]_ classifier for images.
 
+    Parameters
+    ----------
+    num_classes : int
+        The number of unique classes that can be outputted by the model.
+
     References
     ----------
     .. [1] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn,
@@ -120,6 +125,8 @@ class ViT(nn.Module, ERMModel):
         emb_dropout: float = 0.,
     ):
         super().__init__()
+
+        self._num_classes = num_classes
 
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -147,6 +154,9 @@ class ViT(nn.Module, ERMModel):
         self.to_latent = nn.Identity()
 
         self.mlp_head = nn.Linear(dim, num_classes)
+
+    def get_num_classes(self) -> int:
+        return self._num_classes
 
     def forward(self, img: ERM_X):
         x = self.to_patch_embedding(img)
