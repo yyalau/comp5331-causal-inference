@@ -8,5 +8,5 @@ dataset_config:
   rand_augment: [1, 1]
   resize_height: 32
   resize_width: 32
-  num_domains_to_sample: 3
-  num_ood_samples: 2
+  num_domains_to_sample: 2
+  num_ood_samples: 3
