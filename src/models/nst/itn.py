@@ -8,10 +8,10 @@ from .base import StyleTransfer_X, StyleTransfer_Y, StyleTransferModel
 from .modules import TransformerNet
 from . import utils as ut
 
-__all__ = ['ImageTransferNetwork']
+__all__ = ['ItnModel']
 
 
-class ImageTransferNetwork(nn.Module, StyleTransferModel):
+class ItnModel(nn.Module, StyleTransferModel):
     """
     Represents an Image Transfer Network [1]_ style transfer model for images.
 
@@ -23,15 +23,6 @@ class ImageTransferNetwork(nn.Module, StyleTransferModel):
     """
     def __init__(self):
         super().__init__()
-
-        # hyperparameters: TODO: move to config file
-        self.content_weight = 1 # default value
-        self.style_weight = 20 # default value
-        self.learning_rate = 1e-3 # default value
-        style_size = 224 # default value
-        style_image = "images/style-images/mosaic.jpg" # default value
-        self.batch_size = 4 # default value
-
 
         # localization network
         self.features_blobs = []
