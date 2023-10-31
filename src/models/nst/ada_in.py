@@ -78,7 +78,7 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
         :meth:`torch.nn.Module.__call__`.
         """
         states = []
-        for i, layer in enumerate(self.vgg19.features):
+        for i, layer in enumerate(self.vgg19):
             batch = layer(batch)
 
             if i in [3, 10, 17, 30]:
@@ -158,11 +158,11 @@ class AdaINModel(nn.Module, StyleTransferModel):
 
         self.alpha = alpha
 
-    def ada_in(self, content: torch.Tensor, style: torch.Tensor) -> torch.Tensor:
+    def ada_in(self, content: torch.Tensor, style: torch.Tensor, eps: int = 1e5) -> torch.Tensor:
         content_std, content_mean = torch.std_mean(content, dim=(-2, -1))
         style_std, style_mean = torch.std_mean(style, dim=(-2, -1))
-
-        return style_std * (content - content_mean) / content_std + style_mean
+        content_std += eps
+        return style_std[...,None,None] * (content - content_mean[...,None,None]) / content_std[...,None,None] + style_mean[...,None,None]
 
     def forward(self, x: StyleTransfer_X) -> StyleTransfer_Y:
         enc_style = self.encoder(x['style'])

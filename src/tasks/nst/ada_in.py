@@ -74,7 +74,8 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         return F.mse_loss(input_, target)
 
     def _style_loss_fn(self, input_states: list[torch.Tensor], target_states: list[torch.Tensor]) -> torch.Tensor:
-        std_loss, mean_loss = torch.tensor(0.0), torch.tensor(0.0)
+        device = input_states[0].device
+        std_loss, mean_loss = torch.tensor(0.0, device = device), torch.tensor(0.0, device = device)
 
         for input_state, target_state in zip(input_states, target_states):
             input_std, input_mean = torch.std_mean(input_state, dim=(-2, -1))
@@ -100,12 +101,12 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
     def _eval_step(self, batch: StyleTransfer_X, batch_idx: int) -> AdaINEvalOutput:
         x = batch
+        
+        enc_style_states = self.network.encoder.get_states(x['style']) # enc_style_states[0] = 2,64,224,224; enc_style_states[3] = 2,512,28,28;  
+        enc_content = self.network.encoder(x['content']) # 2, 512, 28, 28
 
-        enc_style_states = self.network.encoder.get_states(x['style'])
-        enc_content = self.network.encoder(x['content'])
-
-        enc_applied = self.network.ada_in(enc_content, enc_style_states[-1])
-        applied = self.network.decoder(enc_applied)
+        enc_applied = self.network.ada_in(enc_content, enc_style_states[-1]) # 2, 512, 28, 28
+        applied = self.network.decoder(enc_applied) # 2, 3, 224, 224
 
         enc_applied_states = self.network.encoder.get_states(applied)
 
