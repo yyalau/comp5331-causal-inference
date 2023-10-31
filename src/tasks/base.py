@@ -60,7 +60,7 @@ class BaseTask(pl.LightningModule, Generic[Eval_X, Eval_Out, Infer_X, Infer_Y], 
         loss_metrics = {'loss': eval_output.loss, **eval_output.metrics}
         prefixed_loss_metrics = {f'{prefix}{k}': v for k, v in loss_metrics.items()}
 
-        self.log_dict(prefixed_loss_metrics)
+        self.log_dict(prefixed_loss_metrics, prog_bar=True)
 
         return prefixed_loss_metrics
 

@@ -157,7 +157,7 @@ class ImageDataset(Dataset[DatasetOutput]):
 
         transform = T.Compose([
             T.Resize((self.height, self.width), interpolation=T.InterpolationMode.BILINEAR),
-            T.ToTensor(),
+            T.ToImage(),
             T.ToDtype(torch.float32, scale=True),
         ])
 

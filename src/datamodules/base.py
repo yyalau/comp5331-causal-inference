@@ -11,11 +11,11 @@ __all__ = ['BaseDataModule']
 
 
 class BaseDataModule(pl.LightningDataModule, ABC):
-    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None) -> None:
+    def __init__(self, dataset_config: DatasetConfig, batch_size: int | None = None) -> None:
         super().__init__()
 
         self.ds_config = dataset_config
-        self.max_batches = max_batches
+        self.batch_size = batch_size
         self.train_ds: ImageDataset
         self.test_ds: ImageDataset
         self.val_ds: ImageDataset
