@@ -8,7 +8,7 @@ cd "$SCRIPT_DIR"
 
 
 python "$SCRIPT_DIR/run_nst.py" fit \
-    --data "$SCRIPT_DIR/config/data/office_home.yaml" \
+    --data "$SCRIPT_DIR/config/data/pacs.yaml" \
     --model "$SCRIPT_DIR/config/model/nst/ada_in.yaml" \
     --trainer.devices 1 \
     --trainer.accelerator gpu 
