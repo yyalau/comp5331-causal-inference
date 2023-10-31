@@ -101,8 +101,8 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
     def _eval_step(self, batch: StyleTransfer_X, batch_idx: int) -> AdaINEvalOutput:
         x = batch
-        
-        enc_style_states = self.network.encoder.get_states(x['style']) # enc_style_states[0] = 2,64,224,224; enc_style_states[3] = 2,512,28,28;  
+
+        enc_style_states = self.network.encoder.get_states(x['style']) # enc_style_states[0] = 2,64,224,224; enc_style_states[3] = 2,512,28,28;
         enc_content = self.network.encoder(x['content']) # 2, 512, 28, 28
 
         enc_applied = self.network.ada_in(enc_content, enc_style_states[-1]) # 2, 512, 28, 28

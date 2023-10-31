@@ -183,7 +183,7 @@ class ImageDataset(Dataset[DatasetOutput]):
                 domain_data_map[ood_domain], num_ood_samples
             )
         ]
-        
+
         return torch.stack([self._preprocess(s) for s in style])
 
     def _create_tensors_from_batch(
@@ -216,7 +216,7 @@ class ImageDataset(Dataset[DatasetOutput]):
 
         if num_domains_to_sample is None or num_ood_samples is None:
             raise ValueError('Values for collate are empty')
-        
+
         content, labels, domains = self._create_tensors_from_batch(batch)
         styles = self._ood_sample(
             domains,

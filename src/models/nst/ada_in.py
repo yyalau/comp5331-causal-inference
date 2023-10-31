@@ -158,15 +158,16 @@ class AdaINModel(nn.Module, StyleTransferModel):
 
         self.alpha = alpha
 
-    def ada_in(self, content: torch.Tensor, style: torch.Tensor, eps: int = 1e5) -> torch.Tensor:
-        content_std, content_mean = torch.std_mean(content, dim=(-2, -1))
-        style_std, style_mean = torch.std_mean(style, dim=(-2, -1))
-        content_std += eps
-        return style_std[...,None,None] * (content - content_mean[...,None,None]) / content_std[...,None,None] + style_mean[...,None,None]
+    def ada_in(self, content: torch.Tensor, style: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
+        content_std, content_mean = torch.std_mean(content, dim=(-2, -1), keepdim=True)
+        style_std, style_mean = torch.std_mean(style, dim=(-2, -1), keepdim=True)
+
+        return style_std * (content - content_mean) / (content_std + eps) + style_mean
 
     def forward(self, x: StyleTransfer_X) -> StyleTransfer_Y:
         enc_style = self.encoder(x['style'])
         enc_content = self.encoder(x['content'])
         alpha = self.alpha
 
-        return alpha * self.ada_in(enc_content, enc_style) + (1 - alpha) * enc_content
+        enc_applied = alpha * self.ada_in(enc_content, enc_style) + (1 - alpha) * enc_content
+        return self.decoder(enc_applied)
