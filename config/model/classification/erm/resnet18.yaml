@@ -3,7 +3,6 @@ classifier:
   init_args:
     num_classes: 100
     pretrained: True
-num_classes: 100
 optimizer:
   class_path: torch.optim.SGD
   init_args:

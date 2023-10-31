@@ -21,3 +21,8 @@ class ClassificationModel(NNModule[X_contra, Classification_Y], Protocol[X_contr
     """
     Represents a classification model.
     """
+    def get_num_classes(self) -> int:
+        """
+        Returns the number of unique classes that can be outputted by the model.
+        """
+        ...

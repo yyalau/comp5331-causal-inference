@@ -1,5 +1,5 @@
 classifier:
-  class_path: src.models.classification.fa.FAGT
+  class_path: src.models.classification.fa.FAST
   init_args:
     nst:
       class_path: src.models.nst.ada_in.AdaINModel

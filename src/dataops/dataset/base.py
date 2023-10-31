@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 from torch.utils.data import Dataset
 import torch
-import torchvision.transforms as T
+import torchvision.transforms.v2 as T
 
 from typing import List, Optional, Tuple
 from typing_extensions import TypeAlias
@@ -195,15 +195,11 @@ class ImageDataset(Dataset[DatasetOutput]):
     def _preprocess(self, X: npt.NDArray[np.float32]) -> Tensor:
         image = Image.fromarray(X)
 
-        transform = T.Compose(
-            [
-                T.Resize(
-                    (self.height, self.width),
-                    interpolation=T.InterpolationMode.BILINEAR,
-                ),
-                T.ToTensor(),
-            ]
-        )
+        transform = T.Compose([
+            T.Resize((self.height, self.width), interpolation=T.InterpolationMode.BILINEAR),
+            T.ToImage(),
+            T.ToDtype(torch.float32, scale=True),
+        ])
 
         resized_img = transform(self.transforms(image))
         assert isinstance(resized_img, Tensor)
@@ -212,11 +208,11 @@ class ImageDataset(Dataset[DatasetOutput]):
 
     def _ood_sample(
         self, domain_list: List[str], num_domains_to_sample: int, num_ood_samples: int
-    ) -> List[Tensor]:
+    ) -> Tensor:
         domain_data_map = copy.deepcopy(self.domain_data_map)
 
-        return [
-            torch.from_numpy(sample.load())
+        style = [
+            sample.load()
             for domain in domain_list
             for ood_domain in sample_dictionary(
                 domain_data_map,
@@ -227,6 +223,8 @@ class ImageDataset(Dataset[DatasetOutput]):
                 domain_data_map[ood_domain], num_ood_samples
             )
         ]
+
+        return torch.stack([self._preprocess(s) for s in style])
 
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]
@@ -247,7 +245,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         content, _, domains = self._create_tensors_from_batch(batch)
         style = self._ood_sample(domains, 1, 1)
         assert len(style) == len(batch)
-        return StyleTransfer_X(content=content, style=style[0])
+        return StyleTransfer_X(content=content, style=style)
 
     def collate_fa(
         self,

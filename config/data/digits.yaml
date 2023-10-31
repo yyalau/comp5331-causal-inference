@@ -1,4 +1,4 @@
-max_batches: 2
+batch_size: 32
 dataset_config:
   dataset_path_root: "./data/digits_dg"
   dataset_name: "DIGITS"

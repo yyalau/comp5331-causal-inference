@@ -20,13 +20,13 @@ class ERMTask(ClassificationTask[ERM_X]):
         self,
         classifier: ERMModel,
         *,
-        num_classes: int,
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
+        img_log_freq: int = 64,
     ) -> None:
         super().__init__(
             classifier=classifier,
-            num_classes=num_classes,
             optimizer=optimizer,
             scheduler=scheduler,
+            img_log_freq=img_log_freq,
         )

@@ -25,7 +25,7 @@ class BaseDataModule(pl.LightningDataModule):
         super().__init__()
 
         self.ds_config = dataset_config
-        self.max_batches = max_batches
+        self.batch_size = batch_size
         self.train_ds: ImageDataset
         self.test_ds: ImageDataset
         self.val_ds: ImageDataset

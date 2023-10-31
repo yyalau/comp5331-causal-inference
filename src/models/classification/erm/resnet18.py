@@ -63,7 +63,7 @@ class BasicBlock(nn.Module):
         return out
 
 
-class ResNet(nn.Module, ERMModel):
+class ResNet(nn.Module):
     """
     Represents a General ResNet Model.
     """
@@ -108,14 +108,14 @@ class ResNet(nn.Module, ERMModel):
         # self.ms_layers = ms_layers
 
         self._init_params()
-    
+
     @property
     def out_features(self):
         """Output feature dimension."""
         if self.__dict__.get("_out_features") is None:
             return None
         return self._out_features
-    
+
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
@@ -193,10 +193,23 @@ def resnet18(pretrained: bool = True):
 
 class ResNet18(nn.Module, ERMModel):
     """
-    Represents a pre-trained ResNet18 Backbone for PACS and Office-Home.
+    Represents a pre-trained ResNet18 [1]_ backbone for PACS and Office-Home.
+
+    Parameters
+    ----------
+    num_classes : int
+        The number of unique classes that can be outputted by the model.
+
+    References
+    ----------
+    .. [1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. 2016.
+       eep residual learning for image recognition. In *CVPR*. 770--778.
+       <https://doi.org/10.48550/arXiv.1512.03385>
     """
     def __init__(self, *, num_classes: int, pretrained: bool = True):
         super().__init__()
+
+        self._num_classes = num_classes
 
         self.backbone = resnet18(pretrained)
         fdim = self.backbone.out_features
@@ -204,6 +217,9 @@ class ResNet18(nn.Module, ERMModel):
         self.classifier = None
         if num_classes > 0:
             self.classifier = nn.Linear(fdim, num_classes)
+
+    def get_num_classes(self) -> int:
+        return self._num_classes
 
     def forward(self, x: torch.Tensor, return_feature: bool = False):
         f = self.backbone(x)
