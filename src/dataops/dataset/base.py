@@ -79,6 +79,8 @@ class DatasetConfig:
         Image height after resizing.
     resize_width : int
         Image width after resizing.
+    interpolation_mode : T.InterpolationMode
+        Interpolation mode for reshaping the image.
     num_domains_to_sample : int
         The number of domains to sample from for
         each training, validation or testing sample.
@@ -97,6 +99,7 @@ class DatasetConfig:
     rand_augment: List[int]
     resize_height: int
     resize_width: int
+    interpolation_mode: T.InterpolationMode
     num_domains_to_sample: Optional[int]
     num_ood_samples: Optional[int]
 
@@ -158,6 +161,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         self.num_domains_to_sample = config.num_domains_to_sample
         self.num_ood_samples = config.num_ood_samples
         self.dataset_path_root = config.dataset_path_root
+        self.interpolation_mode = config.interpolation_mode
 
         if not config.dataset_path_root.exists():
             parent_root = config.dataset_path_root.parent.name
@@ -196,9 +200,9 @@ class ImageDataset(Dataset[DatasetOutput]):
         image = Image.fromarray(X)
 
         transform = T.Compose([
-            T.Resize((self.height, self.width), interpolation=T.InterpolationMode.BILINEAR),
-            T.ToImage(),
-            T.ToDtype(torch.float32, scale=True),
+            T.Resize((self.height, self.width), interpolation=self.interpolation_mode),
+            T.PILToTensor(),
+            T.ConvertImageDtype(torch.float32),
         ])
 
         resized_img = transform(self.transforms(image))
@@ -208,23 +212,22 @@ class ImageDataset(Dataset[DatasetOutput]):
 
     def _ood_sample(
         self, domain_list: List[str], num_domains_to_sample: int, num_ood_samples: int
-    ) -> Tensor:
+    ) -> List[Tensor]:
         domain_data_map = copy.deepcopy(self.domain_data_map)
-
-        style = [
-            sample.load()
-            for domain in domain_list
+        styles: List[Tensor] = []
+        for domain in domain_list:
+            domain_styles: List[Tensor] = []
             for ood_domain in sample_dictionary(
                 domain_data_map,
                 num_domains_to_sample,
                 lambda other_domain: other_domain != domain,
-            )
-            for sample in sample_sequence_and_remove_from_population(
-                domain_data_map[ood_domain], num_ood_samples
-            )
-        ]
-
-        return torch.stack([self._preprocess(s) for s in style])
+            ):
+                for sample in sample_sequence_and_remove_from_population(
+                    domain_data_map[ood_domain], num_ood_samples
+                ):
+                    domain_styles.append(self._preprocess(sample.load()))
+            styles.append(torch.stack(domain_styles))
+        return styles
 
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]
@@ -243,8 +246,7 @@ class ImageDataset(Dataset[DatasetOutput]):
 
     def collate_st(self, batch: List[DatasetOutput]) -> StyleTransfer_X:
         content, _, domains = self._create_tensors_from_batch(batch)
-        style = self._ood_sample(domains, 1, 1)
-        assert len(style) == len(batch)
+        style = torch.concat(self._ood_sample(domains, 1, 1))
         return StyleTransfer_X(content=content, style=style)
 
     def collate_fa(

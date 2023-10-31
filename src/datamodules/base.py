@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-
+from typing import Optional
 from torch.utils.data import DataLoader
 import lightning.pytorch as pl
 
@@ -20,12 +20,16 @@ class BaseDataModule(pl.LightningDataModule):
         The maximum number of batches to
         train/validate the data before terminating.
         Defaults to None.
+    num_workers: int | None
+        The number of workers to load the dataset.
+        Defaults to 1 if not provided.
     """
-    def __init__(self, dataset_config: DatasetConfig, max_batches: int | None = None) -> None:
+    def __init__(self, dataset_config: DatasetConfig, max_batches: Optional[int] = None, num_workers: Optional[int] = 1) -> None:
         super().__init__()
 
         self.ds_config = dataset_config
-        self.batch_size = batch_size
+        self.batch_size = max_batches
+        self.num_workers = 1 if num_workers is None else num_workers
         self.train_ds: ImageDataset
         self.test_ds: ImageDataset
         self.val_ds: ImageDataset
