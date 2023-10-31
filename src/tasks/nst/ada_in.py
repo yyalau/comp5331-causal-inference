@@ -86,15 +86,15 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         return mean_loss + std_loss
 
-    def _content_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], content: torch.Tensor) -> torch.Tensor:
-        return self._content_loss_fn(enc_applied_states[-1], content)
+    def _content_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], enc_content: torch.Tensor) -> torch.Tensor:
+        return self._content_loss_fn(enc_applied_states[-1], enc_content)
 
-    def _style_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], content: torch.Tensor) -> torch.Tensor:
+    def _style_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], enc_content: torch.Tensor) -> torch.Tensor:
         return self._style_loss_fn(enc_applied_states, enc_style_states)
 
-    def _combined_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], content: torch.Tensor) -> torch.Tensor:
-        content_loss = self._content_loss(enc_applied_states, enc_style_states, content)
-        style_loss = self._style_loss(enc_applied_states, enc_style_states, content)
+    def _combined_loss(self, enc_applied_states: list[torch.Tensor], enc_style_states: list[torch.Tensor], enc_content: torch.Tensor) -> torch.Tensor:
+        content_loss = self._content_loss(enc_applied_states, enc_style_states, enc_content)
+        style_loss = self._style_loss(enc_applied_states, enc_style_states, enc_content)
         gamma = self.gamma
 
         return content_loss + gamma * style_loss
@@ -102,11 +102,11 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
     def _eval_step(self, batch: StyleTransfer_X, batch_idx: int) -> AdaINEvalOutput:
         x = batch
 
-        enc_style_states = self.network.encoder.get_states(x['style']) # enc_style_states[0] = 2,64,224,224; enc_style_states[3] = 2,512,28,28;
-        enc_content = self.network.encoder(x['content']) # 2, 512, 28, 28
+        enc_style_states = self.network.encoder.get_states(x['style'])
+        enc_content = self.network.encoder(x['content'])
 
-        enc_applied = self.network.ada_in(enc_content, enc_style_states[-1]) # 2, 512, 28, 28
-        applied = self.network.decoder(enc_applied) # 2, 3, 224, 224
+        enc_applied = self.network.ada_in(enc_content, enc_style_states[-1])
+        applied = self.network.decoder(enc_applied)
 
         enc_applied_states = self.network.encoder.get_states(applied)
 
