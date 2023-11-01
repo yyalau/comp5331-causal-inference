@@ -1,0 +1,15 @@
+batch_size: 2
+num_workers: 4
+dataset_config:
+  dataset_path_root: "./data/OfficeHomeDataset_10072016"
+  dataset_name: "OFFICE"
+  train_val_domains: ['Art', 'Clipart', 'Product']
+  test_domains: ['Art', 'Clipart', 'Real World']
+  lazy: False
+  preprocess_params:
+    image_resize_params:
+      height: 32
+      width: 32
+      interpolation_mode: "NEAREST"
+  num_domains_to_sample: 1
+  num_ood_samples: 1

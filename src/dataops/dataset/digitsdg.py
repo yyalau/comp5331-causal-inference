@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List
 
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
-from ..image import create_image_loader
+from ..image import ImageLoader
 
 __all__ = ["DigitsDGDataset", "DigitsDomains"]
 
@@ -58,8 +58,8 @@ class DigitsDGDataset(ImageDataset):
                         for img_path in label_dir.iterdir():
                             if img_path.is_file():
                                 label = int(img_path.parent.name)
-                                image_loader = create_image_loader(
-                                    img_path, self.lazy
+                                image_loader = ImageLoader(
+                                    img_path, self.lazy, self.preprocessor_params
                                 )
                                 domain = folder.parent.name
                                 image_data_loader = ImageReader(image_loader, label)

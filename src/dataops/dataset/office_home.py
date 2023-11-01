@@ -10,7 +10,7 @@ import random
 from typing import List
 
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
-from ..image import create_image_loader
+from ..image import ImageLoader
 
 __all__ = ["OfficeHomeDataset", "OfficHomeDomains"]
 
@@ -76,8 +76,8 @@ class OfficeHomeDataset(ImageDataset):
         for image_path in data_to_fetch:
             label = self.labels[image_path.parent.name]
             domain = image_path.parent.parent.name
-            image_loader = create_image_loader(
-                image_path, self.lazy
+            image_loader = ImageLoader(
+                image_path, self.lazy, self.preprocessor_params
             )
 
             image_data_loader = ImageReader(image_loader, label)

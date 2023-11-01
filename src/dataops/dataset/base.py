@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 import copy
 from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
-import numpy.typing as npt
 
 from pathlib import Path
 
-from PIL import Image
+# from PIL import Image
 from pydantic import BaseModel
 
 from torch.utils.data import Dataset
 import torch
-import torchvision.transforms.v2 as T
 
 from typing import List, Optional, Tuple
 from typing_extensions import TypeAlias
@@ -24,13 +22,14 @@ from typing_extensions import TypeAlias
 from ...tasks.classification import Classification_Y, FA_X, ERM_X
 from ...tasks.nst import StyleTransfer_X
 
-from ..augmentation import RandAugment
 from ..func import (
     get_flattened_index,
     sample_dictionary,
     sample_sequence_and_remove_from_population,
 )
 from ..utils import download_from_gdrive, unzip
+
+from ..image import ImageLoader, PreprocessParams
 
 __all__ = [
     "ImageDataset",
@@ -73,14 +72,8 @@ class DatasetConfig:
         The domains to use for testing
     lazy : bool
         Lazy initialization of the images.
-    rand_augment : List[int]
-        Alpha and beta parameters for random augmentation.
-    resize_height : int
-        Image height after resizing.
-    resize_width : int
-        Image width after resizing.
-    interpolation_mode : T.InterpolationMode
-        Interpolation mode for reshaping the image.
+    preprocess_params : PreprocessParams
+        Parameters for preprocessing the image.
     num_domains_to_sample : int
         The number of domains to sample from for
         each training, validation or testing sample.
@@ -96,10 +89,7 @@ class DatasetConfig:
     train_val_domains: List[str]
     test_domains: List[str]
     lazy: bool
-    rand_augment: List[int]
-    resize_height: int
-    resize_width: int
-    interpolation_mode: T.InterpolationMode
+    preprocess_params: PreprocessParams
     num_domains_to_sample: Optional[int]
     num_ood_samples: Optional[int]
 
@@ -113,9 +103,8 @@ class DatasetPartition(str, Enum):
 
 @dataclass
 class ImageReader:
-    load: Callable[[], npt.NDArray[np.float32]]
+    load: ImageLoader
     label: int
-
 
 class ImageDataset(Dataset[DatasetOutput]):
     data_url = ""
@@ -161,8 +150,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         self.num_domains_to_sample = config.num_domains_to_sample
         self.num_ood_samples = config.num_ood_samples
         self.dataset_path_root = config.dataset_path_root
-        self.interpolation_mode = config.interpolation_mode
-
+        self.preprocessor_params = config.preprocess_params
         if not config.dataset_path_root.exists():
             parent_root = config.dataset_path_root.parent.name
             self.download(parent_root)
@@ -178,37 +166,19 @@ class ImageDataset(Dataset[DatasetOutput]):
         self.len = sum(
             len(image_loader) for image_loader in self.domain_data_map.values()
         )
-        self.rand_augment = config.rand_augment
-        assert len(self.rand_augment) == 2
-        self.transforms = RandAugment(*self.rand_augment)
-        self.height = config.resize_height
-        self.width = config.resize_width
+
 
     def __getitem__(self, idx: int) -> DatasetOutput:
         """
         Get the preprocessed item at the specified index.
         """
         domain, item = get_flattened_index(self.domain_data_map, idx)
-        processed_image = self._preprocess(item.load())
+        processed_image = item.load()
         label = item.label
         return DatasetOutput(image=processed_image, label=label, domain=domain)
 
     def __len__(self) -> int:
         return self.len
-
-    def _preprocess(self, X: npt.NDArray[np.float32]) -> Tensor:
-        image = Image.fromarray(X)
-
-        transform = T.Compose([
-            T.Resize((self.height, self.width), interpolation=self.interpolation_mode),
-            T.PILToTensor(),
-            T.ConvertImageDtype(torch.float32),
-        ])
-
-        resized_img = transform(self.transforms(image))
-        assert isinstance(resized_img, Tensor)
-
-        return resized_img
 
     def _ood_sample(
         self, domain_list: List[str], num_domains_to_sample: int, num_ood_samples: int
@@ -225,7 +195,7 @@ class ImageDataset(Dataset[DatasetOutput]):
                 for sample in sample_sequence_and_remove_from_population(
                     domain_data_map[ood_domain], num_ood_samples
                 ):
-                    domain_styles.append(self._preprocess(sample.load()))
+                    domain_styles.append((sample.load()))
             styles.append(torch.stack(domain_styles))
         return styles
 
@@ -256,7 +226,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         num_domains_to_sample, num_ood_samples = self._validate_ood_sample_size()
         content, labels, domains = self._create_tensors_from_batch(batch)
         styles = self._ood_sample(domains, num_domains_to_sample, num_ood_samples)
-        return FA_X(content=content, styles=styles), labels
+        return FA_X(content=content, styles=styles[:len(batch)]), labels
 
     def _validate_ood_sample_size(self) -> Tuple[int, int]:
         domain_len = len(self.domains)

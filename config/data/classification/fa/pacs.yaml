@@ -1,0 +1,18 @@
+batch_size: 22
+num_workers: 6
+dataset_config:
+  dataset_path_root: "./data/pacs"
+  dataset_name: "PACS"
+  train_val_domains: ['art_painting', 'cartoon', 'photo']
+  test_domains: ['cartoon', 'photo','sketch']
+  lazy: False
+  preprocess_params:
+    image_resize_params:
+      height: 32
+      width: 32
+      interpolation_mode: "NEAREST"
+    rand_augment_params:
+      alpha: 1
+      beta: 1
+  num_domains_to_sample: 2
+  num_ood_samples: 3

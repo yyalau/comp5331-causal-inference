@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 
 from ..dataset.base import DatasetConfig, DatasetPartition, ImageDataset, ImageReader, SupportedDatasets
-from ..image import create_image_loader
+from ..image import ImageLoader
 
 
 __all__ = ["PACSDataset", 'PACSDomains']
@@ -51,8 +51,8 @@ class PACSDataset(ImageDataset):
                         path, label = line.strip().split(" ")
                         path = Path(f'{data_root_path}/images/{path}')
                         label = int(label)
-                        image_loader = create_image_loader(
-                            path, self.lazy
+                        image_loader = ImageLoader(
+                            path, self.lazy, self.preprocessor_params
                         )
                         image_data_reader = ImageReader(image_loader, label)
                         referance_label_map[domain_name].append(image_data_reader)

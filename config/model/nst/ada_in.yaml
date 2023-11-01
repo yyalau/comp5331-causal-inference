@@ -11,8 +11,10 @@ network:
         wpath: "weights/decoder/decoder.pth"
 optimizer:
   class_path: torch.optim.Adam
+  init_args:
+    lr: 0.0001
 scheduler:
   class_path: torch.optim.lr_scheduler.StepLR
   init_args:
     step_size: 30
-  
+    gamma: 0.00005
