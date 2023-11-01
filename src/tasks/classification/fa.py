@@ -2,13 +2,17 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 
+from matplotlib.axes import Axes
+import matplotlib.pyplot as plt
+
 import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
+from torch.utils.tensorboard.writer import SummaryWriter
 
 from ...models.classification.fa import FA_X, FAModel
 
-from .base import ClassificationTask
+from .base import ClassificationTask, ClassificationEvalOutput
 
 __all__ = ['FATask', 'FA_X']
 
@@ -30,3 +34,45 @@ class FATask(ClassificationTask[FA_X]):
             scheduler=scheduler,
             img_log_freq=img_log_freq,
         )
+
+    def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[FA_X], *, prefix: str, batch_idx: int) -> None:
+        batch_size, num_classes = eval_output.y.shape
+        num_styles = len(eval_output.x['styles'])
+
+        nrows = batch_size
+        ncols = 2 + num_styles
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex='col', sharey='col', squeeze=False)
+
+        grid_idx = 1
+        for row in range(nrows):
+            example_input_content = torch.einsum('chw->hwc', eval_output.x['content'][row]).cpu()
+            example_input_styles = [torch.einsum('chw->hwc', style[row]).cpu() for style in eval_output.x['styles']]
+            example_class_prob = eval_output.y[row].unsqueeze(1).cpu()
+
+            for col in range(ncols):
+                ax: Axes = axes[row, col]
+                style_idx = col - 2
+
+                if row == 0:
+                    if style_idx < 0:
+                        ax.set_title('Content Image')
+                    elif style_idx < num_styles:
+                        ax.set_title('Style Image')
+                    elif style_idx == num_styles:
+                        ax.set_title('Class Probabilities')
+
+                if style_idx < 0:
+                    ax.imshow(example_input_content)
+                elif style_idx < num_styles:
+                    ax.imshow(example_input_styles[style_idx])
+                elif style_idx == num_styles:
+                    ax.imshow(example_class_prob)
+
+                    ax.set_xticks([0], [''])
+                    ax.set_yticks(list(range(num_classes)), labels=[f'Class {c_idx}' for c_idx in range(num_classes)])
+                    for c_idx in list(range(num_classes)):
+                        ax.text(0, c_idx, f'{example_class_prob[c_idx, 0].item():.3f}', ha='center', va='center', color='w')
+
+                grid_idx += 1
+
+        writer.add_figure(f'images/{prefix}batch_{batch_idx}', fig)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Generic
@@ -10,6 +11,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
 from torchmetrics import Accuracy, F1Score, Precision, Recall
+
 from lightning.pytorch.loggers import TensorBoardLogger
 
 from ...models.base import X
@@ -98,15 +100,13 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
             return
 
         if isinstance(self.logger, TensorBoardLogger):
-            writer = self.logger.experiment
-            if isinstance(writer, SummaryWriter):
-                writer.add_images(f'images/x/{prefix}{batch_idx}', eval_output.x, self.current_epoch)
-                writer.add_images(f'images/y/{prefix}{batch_idx}', eval_output.y, self.current_epoch)
-                writer.add_images(f'images/y_hat/{prefix}{batch_idx}', eval_output.y_hat, self.current_epoch)
-            else:
-                raise TypeError('Incorrect type of writer')
+            self._log_images(self.logger.experiment, eval_output, prefix=prefix, batch_idx=batch_idx)
         else:
             raise TypeError('Incorrect type of logger')
+
+    @abstractmethod
+    def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[X], *, prefix: str, batch_idx: int) -> None:
+        raise NotImplementedError
 
     def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
         eval_output = self._eval_step(batch, batch_idx)

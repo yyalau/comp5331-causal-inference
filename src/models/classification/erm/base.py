@@ -13,7 +13,7 @@ ERM_X: TypeAlias = torch.Tensor
 """
 A batch of images to classify.
 
-Shape: `(batch_size, num_channels, depth, height, width)`
+Shape: `(batch_size, num_channels, height, width)`
 """
 
 @runtime_checkable
