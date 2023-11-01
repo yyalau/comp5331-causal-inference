@@ -7,7 +7,7 @@ import numpy as np
 __all__ = ['TransformerNet']
 
 
-class TransformerNet(torch.nn.Module):
+class TransformerNet(nn.Module):
     def __init__(self):
         super(TransformerNet, self).__init__()
 
@@ -54,7 +54,7 @@ class TransformerNet(torch.nn.Module):
         return y
 
 
-class ConvLayer(torch.nn.Module):
+class ConvLayer(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int, stride: int):
         super(ConvLayer, self).__init__()
         reflection_padding = int(np.floor(kernel_size / 2))
@@ -67,7 +67,7 @@ class ConvLayer(torch.nn.Module):
         return out
 
 
-class ResidualBlock(torch.nn.Module):
+class ResidualBlock(nn.Module):
     """ResidualBlock
     introduced in: https://arxiv.org/abs/1512.03385
     recommended architecture: http://torch.ch/blog/2016/02/04/resnets.html
@@ -89,7 +89,7 @@ class ResidualBlock(torch.nn.Module):
         return out
 
 
-class UpsampleConvLayer(torch.nn.Module):
+class UpsampleConvLayer(nn.Module):
     """UpsampleConvLayer
     Upsamples the input and then does a convolution. This method gives better results
     compared to ConvTranspose2d.
@@ -114,7 +114,7 @@ class UpsampleConvLayer(torch.nn.Module):
         return out
 
 
-class InstanceNormalization(torch.nn.Module):
+class InstanceNormalization(nn.Module):
     """InstanceNormalization
     Improves convergence of neural-style.
     ref: https://arxiv.org/pdf/1607.08022.pdf

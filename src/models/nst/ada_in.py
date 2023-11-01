@@ -12,7 +12,7 @@ __all__ = ['AdaINEncoder', 'AdaINDecoder', 'AdaINModel']
 
 
 class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
-    def __init__(self, pretrained: bool = True):
+    def __init__(self, wpath: str = None):
         super().__init__()
 
         self.vgg19 = nn.Sequential(
@@ -71,6 +71,16 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.ReLU(inplace=True)
             )
 
+        self.load_weights(wpath)
+
+    def load_weights(self, path)-> None:
+        """
+        Loads the weights for the VGG19 model from a given path.
+        """
+        if path is not None:
+            self.vgg19.load_state_dict(torch.load(path))
+        
+
     def get_states(self, batch: torch.Tensor) -> list[torch.Tensor]:
         """
         Similar to :meth:`torch.nn.Module.__call__`, but returns the output of
@@ -91,9 +101,11 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
 
 
 class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
-    def __init__(self):
+    def __init__(self, wpath: str = None):
         super().__init__()
 
+        # https://drive.google.com/u/0/uc?id=1bMfhMMwPeXnYSQI6cDWElSZxOxc6aVyr&export=download
+        
         self.padding = nn.ReflectionPad2d(padding=1) # Using reflection padding as described in vgg19
         self.UpSample = nn.Upsample(scale_factor=2, mode="nearest")
 
@@ -110,21 +122,58 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
         self.conv1_1 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
         self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=0)
 
+        
+        self.net = nn.Sequential(
+            self.padding,
+            self.conv4_1,
+            nn.ReLU(inplace=True),
+            self.UpSample,
+            
+            self.padding,
+            self.conv3_1,
+            nn.ReLU(inplace=True),
+            
+            self.padding,
+            self.conv3_2,
+            nn.ReLU(inplace=True),
+            
+            self.padding,
+            self.conv3_3,
+            nn.ReLU(inplace=True),
+            
+            self.padding,
+            self.conv3_4,
+            nn.ReLU(inplace=True),
+            self.UpSample,
+            
+            self.padding,
+            self.conv2_1,
+            nn.ReLU(inplace=True),
+            
+            self.padding,
+            self.conv2_2,
+            nn.ReLU(inplace=True),
+            self.UpSample,
+            
+            self.padding,
+            self.conv1_1,
+            nn.ReLU(inplace=True),
+            
+            self.padding,
+            self.conv1_2,
+        )
+        self.load_weights(wpath)
+
+
     def forward(self, x: torch.Tensor):
-        out = self.UpSample(F.relu(self.conv4_1(self.padding(x))))
+        return self.net(x)
 
-        out = F.relu(self.conv3_1(self.padding(out)))
-        out = F.relu(self.conv3_2(self.padding(out)))
-        out = F.relu(self.conv3_3(self.padding(out)))
-        out = self.UpSample(F.relu(self.conv3_4(self.padding(out))))
-
-        out = F.relu(self.conv2_1(self.padding(out)))
-        out = self.UpSample(F.relu(self.conv2_2(self.padding(out))))
-
-        out = F.relu(self.conv1_1(self.padding(out)))
-        out = self.conv1_2(self.padding(out))
-        return out
-
+    def load_weights(self, path)-> None:
+        """
+        Loads the weights for the VGG19 model from a given path.
+        """
+        if path is not None:
+            self.net.load_state_dict(torch.load(path))
 
 class AdaINModel(nn.Module, StyleTransferModel):
     """
@@ -165,9 +214,10 @@ class AdaINModel(nn.Module, StyleTransferModel):
         return style_std * (content - content_mean) / (content_std + eps) + style_mean
 
     def forward(self, x: StyleTransfer_X) -> StyleTransfer_Y:
+        # forward for validation and testing
         enc_style = self.encoder(x['style'])
         enc_content = self.encoder(x['content'])
         alpha = self.alpha
-
+    
         enc_applied = alpha * self.ada_in(enc_content, enc_style) + (1 - alpha) * enc_content
         return self.decoder(enc_applied)
