@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from ..base import NNModule
 
@@ -25,19 +24,19 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.Conv2d(in_channels=3, out_channels=3, kernel_size=1),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3),
-            nn.ReLU(inplace=True), # First layer from which Style Loss is calculated
+            nn.ReLU(inplace=True),  # First layer from which Style Loss is calculated
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3),
-            nn.ReLU(inplace=True), # Second layer from which Style Loss is calculated
+            nn.ReLU(inplace=True),  # Second layer from which Style Loss is calculated
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
-            nn.ReflectionPad2d(padding=1), # Third layer from which Style Loss is calculated
+            nn.ReflectionPad2d(padding=1),  # Third layer from which Style Loss is calculated
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
@@ -52,7 +51,7 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3),
-            nn.ReLU(inplace=True), # This is Relu 4.1 The output layer of the encoder.
+            nn.ReLU(inplace=True),  # This is Relu 4.1 The output layer of the encoder.
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
@@ -117,7 +116,7 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
 
         # https://drive.google.com/u/0/uc?id=1bMfhMMwPeXnYSQI6cDWElSZxOxc6aVyr&export=download
 
-        self.padding = nn.ReflectionPad2d(padding=1) # Using reflection padding as described in vgg19
+        self.padding = nn.ReflectionPad2d(padding=1)  # Using reflection padding as described in vgg19
         self.UpSample = nn.Upsample(scale_factor=2, mode="nearest")
 
         self.conv4_1 = nn.Conv2d(in_channels=512, out_channels=256, kernel_size=3, stride=1, padding=0)

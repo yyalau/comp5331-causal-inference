@@ -63,7 +63,7 @@ class SmallConvNet(nn.Module, ERMModel):
 
     References
     ----------
-    .. [1] Kaiyang Zhou, Yongxin Yang, Timothy Hospedales, and Tao Xiang. 2020. 
+    .. [1] Kaiyang Zhou, Yongxin Yang, Timothy Hospedales, and Tao Xiang. 2020.
         Deep domain-adversarial image generation for domain generalisation.
         <https://arxiv.org/pdf/2003.06054.pdf>
     """

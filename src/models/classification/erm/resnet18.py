@@ -19,7 +19,7 @@ model_urls = {
     "resnet152": "https://download.pytorch.org/models/resnet152-b121ed2d.pth",
 }
 
-def conv3x3(in_planes: int, out_planes: int, stride: int =1):
+def conv3x3(in_planes: int, out_planes: int, stride: int = 1):
     """3x3 convolution with padding"""
     return nn.Conv2d(
         in_planes,
@@ -69,7 +69,7 @@ class ResNet(nn.Module):
     def __init__(
         self,
         *,
-        block: BasicBlock,
+        block: type[BasicBlock],
         layers: list[int],
         # ms_class=None,
         # ms_layers=[],
@@ -104,7 +104,7 @@ class ResNet(nn.Module):
             return None
         return self._out_features
 
-    def _make_layer(self, block: BasicBlock, planes: int, blocks: int, stride: int =1) -> nn.Sequential:
+    def _make_layer(self, block: type[BasicBlock], planes: int, blocks: int, stride: int = 1) -> nn.Sequential:
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
