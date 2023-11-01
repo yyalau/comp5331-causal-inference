@@ -226,7 +226,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         num_domains_to_sample, num_ood_samples = self._validate_ood_sample_size()
         content, labels, domains = self._create_tensors_from_batch(batch)
         styles = self._ood_sample(domains, num_domains_to_sample, num_ood_samples)
-        return FA_X(content=content, styles=styles), labels
+        return FA_X(content=content, styles=styles[:len(batch)]), labels
 
     def _validate_ood_sample_size(self) -> Tuple[int, int]:
         domain_len = len(self.domains)

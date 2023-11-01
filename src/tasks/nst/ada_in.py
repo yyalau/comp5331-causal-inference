@@ -100,6 +100,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         return content_loss + gamma * style_loss
 
     def _eval_step(self, batch: StyleTransfer_X, batch_idx: int) -> AdaINEvalOutput:
+        # forward for training
         x = batch
 
         enc_style_states = self.network.encoder.get_states(x['style'])

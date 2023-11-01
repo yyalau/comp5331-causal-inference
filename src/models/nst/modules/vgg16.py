@@ -7,7 +7,7 @@ import torch.nn.functional as F
 __all__ = ['Vgg16']
 
 
-class Vgg16(torch.nn.Module):
+class Vgg16(nn.Module):
     def __init__(self):
         super(Vgg16, self).__init__()
 
