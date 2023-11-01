@@ -77,6 +77,8 @@ class SmallConvNet(nn.Module, ERMModel):
         if pretrained_path is not None:
             if pretrained_path.exists() and pretrained_path.is_file():
                 self.load_state_dict(torch.load(pretrained_path))
+            else:
+                raise ValueError(f'provided path {pretrained_path} does not exist to load the pretrained params.')
 
     def forward(self, x: ERM_X) -> Classification_Y:
         backbone = self.backbone(x)
