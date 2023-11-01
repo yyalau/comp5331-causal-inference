@@ -163,14 +163,14 @@ class ResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool(x)
         x = self.layer1(x)
-        if "layer1" in self.ms_layers:
-            x = self.mixstyle(x)
+        # if "layer1" in self.ms_layers:
+        #     x = self.mixstyle(x)
         x = self.layer2(x)
-        if "layer2" in self.ms_layers:
-            x = self.mixstyle(x)
+        # if "layer2" in self.ms_layers:
+        #     x = self.mixstyle(x)
         x = self.layer3(x)
-        if "layer3" in self.ms_layers:
-            x = self.mixstyle(x)
+        # if "layer3" in self.ms_layers:
+        #     x = self.mixstyle(x)
         return self.layer4(x)
 
     def forward(self, x: torch.Tensor):

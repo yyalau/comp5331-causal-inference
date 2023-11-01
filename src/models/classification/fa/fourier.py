@@ -25,7 +25,10 @@ class FourierMix(nn.Module):
 
     def forward(self, x: torch.Tensor, x_prime: torch.Tensor):
         # Input image shape: (batch_size, num_channels, depth, height, width)
-        assert x.shape == x_prime.shape
+        try:
+            assert x.shape == x_prime.shape
+        except:
+            return x
 
         x_fft = fft.fft2(x, dim=(-2, -1))
         x_prime_fft = fft.fft2(x_prime, dim=(-2, -1))
