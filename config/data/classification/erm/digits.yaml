@@ -6,9 +6,10 @@ dataset_config:
   train_val_domains: ['mnist', 'mnist_m', 'svhn']
   test_domains: ['mnist', 'mnist_m', 'syn']
   lazy: False
-  rand_augment: [1, 1]
-  resize_height: 32
-  resize_width: 32
-  interpolation_mode: "NEAREST"
+  preprocess_params:
+    image_resize_params:
+      height: 32
+      width: 32
+      interpolation_mode: "NEAREST"
   num_domains_to_sample: 1
   num_ood_samples: 1

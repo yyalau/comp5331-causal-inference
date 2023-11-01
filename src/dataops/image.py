@@ -6,10 +6,7 @@ import numpy as np
 import numpy.typing as npt
 from pathlib import Path
 
-from typing_extensions import TypeAlias
-
-
-
+from typing_extensions import Optional, TypeAlias
 from dataclasses import dataclass
 from PIL import Image
 import torch
@@ -23,18 +20,73 @@ __all__ = ['ImageLoader']
 Tensor: TypeAlias = torch.Tensor
 
 @dataclass
-class PreprocessParams:
+class RandAugmentParams:
+    """
+    Parameters
+    ----------
+    alpha : int
+        random augmentation parameter.
+    beta : int
+        random augmentation parameter.
+    """
+    alpha: int
+    beta: int
+
+@dataclass
+class ImageResizeParams:
+    """
+    Parameters
+    ----------
+    resize_height : int
+        Image height after resizing.
+    resize_width : int
+        Image width after resizing.
+    interpolation_mode : T.InterpolationMode
+        Interpolation mode for reshaping the image.
+    """
     height: int
     width: int
     interpolation_mode: T.InterpolationMode
-    augment: RandAugment
+
+@dataclass
+class PreprocessParams:
+    """
+    Parameters
+    ----------
+    image_resize_params : ImageResizeParams
+        Parameters for resizing the image.
+    rand_augment_params : RandAugmentParams
+        Parameters for random augmentation.
+    """
+    image_resize_params: ImageResizeParams
+    rand_augment_params: Optional[RandAugmentParams]
 
 class ImageLoader:
 
     def __init__(self, path: Path, lazy: bool, preprocess_params: PreprocessParams):
         super().__init__()
-        self.preprocess_params = preprocess_params
+        self.transform = self._get_transform(preprocess_params)
+        self.rand_augment = self._get_rand_augment(preprocess_params)
         self.load_callback = self._load(path, lazy)
+
+    def _get_transform(self, preprocess_params: PreprocessParams) -> T.Compose:
+        resize_params = preprocess_params.image_resize_params
+        return T.Compose([
+            T.Resize(
+                (resize_params.height, resize_params.width),
+                interpolation=resize_params.interpolation_mode
+            ),
+            T.PILToTensor(),
+            T.ConvertImageDtype(torch.float32),
+        ])
+
+    def _get_rand_augment(self, preprocess_params: PreprocessParams) -> RandAugment:
+        rand_augment_params = preprocess_params.rand_augment_params
+        if rand_augment_params is None:
+            return RandAugment(None, None)
+        alpha = rand_augment_params.alpha
+        beta = rand_augment_params.beta
+        return RandAugment(alpha, beta)
 
     def __call__(self) -> Tensor:
         return self.load_callback()
@@ -43,16 +95,10 @@ class ImageLoader:
         self,
         image_array: npt.NDArray[np.float32],
     ) -> Tensor:
-        params = self.preprocess_params
         image = Image.fromarray(image_array)
-        transform = T.Compose([
-            T.Resize((params.height, params.width), interpolation=params.interpolation_mode),
-            T.PILToTensor(),
-            T.ConvertImageDtype(torch.float32),
-        ])
-        resized_img = transform(params.augment(image))
+        augmented_img = self.rand_augment(image)
+        resized_img = self.transform(augmented_img)
         assert isinstance(resized_img, Tensor)
-
         return resized_img
 
     def _load_from_file(self, path: Path) -> npt.NDArray[np.float32]:

@@ -15,7 +15,6 @@ from pydantic import BaseModel
 
 from torch.utils.data import Dataset
 import torch
-import torchvision.transforms.v2 as T
 
 from typing import List, Optional, Tuple
 from typing_extensions import TypeAlias
@@ -23,7 +22,6 @@ from typing_extensions import TypeAlias
 from ...tasks.classification import Classification_Y, FA_X, ERM_X
 from ...tasks.nst import StyleTransfer_X
 
-from ..augmentation import RandAugment
 from ..func import (
     get_flattened_index,
     sample_dictionary,
@@ -74,14 +72,8 @@ class DatasetConfig:
         The domains to use for testing
     lazy : bool
         Lazy initialization of the images.
-    rand_augment : List[int]
-        Alpha and beta parameters for random augmentation.
-    resize_height : int
-        Image height after resizing.
-    resize_width : int
-        Image width after resizing.
-    interpolation_mode : T.InterpolationMode
-        Interpolation mode for reshaping the image.
+    preprocess_params : PreprocessParams
+        Parameters for preprocessing the image.
     num_domains_to_sample : int
         The number of domains to sample from for
         each training, validation or testing sample.
@@ -97,10 +89,7 @@ class DatasetConfig:
     train_val_domains: List[str]
     test_domains: List[str]
     lazy: bool
-    rand_augment: List[int]
-    resize_height: int
-    resize_width: int
-    interpolation_mode: T.InterpolationMode
+    preprocess_params: PreprocessParams
     num_domains_to_sample: Optional[int]
     num_ood_samples: Optional[int]
 
@@ -161,13 +150,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         self.num_domains_to_sample = config.num_domains_to_sample
         self.num_ood_samples = config.num_ood_samples
         self.dataset_path_root = config.dataset_path_root
-        self.preprocessor_params = PreprocessParams(
-            height=config.resize_height,
-            width=config.resize_width,
-            interpolation_mode=config.interpolation_mode,
-            augment=RandAugment(*config.rand_augment)
-        )
-
+        self.preprocessor_params = config.preprocess_params
         if not config.dataset_path_root.exists():
             parent_root = config.dataset_path_root.parent.name
             self.download(parent_root)
