@@ -63,11 +63,20 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         num_classes = self.classifier.get_num_classes()
 
         self.loss = F.cross_entropy
+
+        # PyTorch Lightning cannot detect and automatically set the device for each metric
+        # unless they are directly set as an attribute of the LightningModule
+        # (as opposed to placing them inside a container like a dictionary)
+        self._accuracy = Accuracy(task='multiclass', num_classes=num_classes)
+        self._precision = Precision(task='multiclass', num_classes=num_classes)
+        self._recall = Recall(task='multiclass', num_classes=num_classes)
+        self._f1 = F1Score(task='multiclass', num_classes=num_classes)
+
         self.metrics = {
-            'accuracy': Accuracy(task='multiclass', num_classes=num_classes),
-            'precision': Precision(task='multiclass', num_classes=num_classes),
-            'recall': Recall(task='multiclass', num_classes=num_classes),
-            'f1': F1Score(task='multiclass', num_classes=num_classes),
+            'accuracy': self._accuracy,
+            'precision': self._precision,
+            'recall': self._recall,
+            'f1': self._f1,
         }
 
         self.img_log_freq = img_log_freq
