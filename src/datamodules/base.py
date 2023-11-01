@@ -24,11 +24,11 @@ class BaseDataModule(pl.LightningDataModule):
         The number of workers to load the dataset.
         Defaults to 1 if not provided.
     """
-    def __init__(self, dataset_config: DatasetConfig, max_batches: Optional[int] = None, num_workers: Optional[int] = 1) -> None:
+    def __init__(self, dataset_config: DatasetConfig, batch_size: Optional[int] = None, num_workers: Optional[int] = 1) -> None:
         super().__init__()
 
         self.ds_config = dataset_config
-        self.batch_size = max_batches
+        self.batch_size = batch_size
         self.num_workers = 1 if num_workers is None else num_workers
         self.train_ds: ImageDataset
         self.test_ds: ImageDataset
