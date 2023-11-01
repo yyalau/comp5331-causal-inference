@@ -54,7 +54,7 @@ class FATask(ClassificationTask[FA_X]):
             example_input_content = torch.einsum('chw->hwc', eval_output.x['content'][row]).cpu()
             example_input_styles = [torch.einsum('chw->hwc', style[row]).cpu() for style in eval_output.x['styles']]
             example_gt_class_idx = eval_output.y[row].argmax().item()
-            example_class_prob = eval_output.y_hat[row].unsqueeze(1).cpu()
+            example_class_prob = torch.softmax(eval_output.y_hat[row].unsqueeze(1), dim=0).cpu()
             example_pred_class = example_class_prob.argmax().item()
 
             for col in range(ncols):

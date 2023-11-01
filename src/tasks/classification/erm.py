@@ -52,7 +52,7 @@ class ERMTask(ClassificationTask[ERM_X]):
         for row in range(nrows):
             example_input_img = torch.einsum('chw->hwc', eval_output.x[row]).cpu()
             example_gt_class_idx = eval_output.y[row].argmax().item()
-            example_class_prob = eval_output.y_hat[row].unsqueeze(1).cpu()
+            example_class_prob = torch.softmax(eval_output.y_hat[row].unsqueeze(1), dim=0).cpu()
             example_pred_class = example_class_prob.argmax().item()
 
             for col in range(ncols):
