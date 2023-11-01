@@ -78,7 +78,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
     def _style_loss_fn(self, input_states: list[torch.Tensor], target_states: list[torch.Tensor]) -> torch.Tensor:
         device = input_states[0].device
-        std_loss, mean_loss = torch.tensor(0.0, device = device), torch.tensor(0.0, device = device)
+        std_loss, mean_loss = torch.tensor(0.0, device=device), torch.tensor(0.0, device=device)
 
         for input_state, target_state in zip(input_states, target_states):
             input_std, input_mean = torch.std_mean(input_state, dim=(-2, -1))
@@ -127,11 +127,11 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
             return
 
         if isinstance(self.logger, TensorBoardLogger):
-            self._log_images(self.logger.experiment, eval_output, prefix=prefix, batch_idx=batch_idx)
+            self._log_images(self.logger.experiment, eval_output, prefix=prefix)
         else:
             raise TypeError('Incorrect type of logger')
 
-    def _log_images(self, writer: SummaryWriter, eval_output: AdaINEvalOutput, *, prefix: str, batch_idx: int) -> None:
+    def _log_images(self, writer: SummaryWriter, eval_output: AdaINEvalOutput, *, prefix: str) -> None:
         eval_output_y_hat = eval_output.lazy_y_hat()
         batch_size = eval_output_y_hat.shape[0]
 
@@ -172,7 +172,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         fig.tight_layout()
 
-        writer.add_figure(f'images/{prefix}batch_{batch_idx}', fig)
+        writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)
 
     def validation_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
         eval_output = self._eval_step(batch, batch_idx)

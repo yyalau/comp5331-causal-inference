@@ -35,7 +35,7 @@ class FATask(ClassificationTask[FA_X]):
             img_log_freq=img_log_freq,
         )
 
-    def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[FA_X], *, prefix: str, batch_idx: int) -> None:
+    def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[FA_X], *, prefix: str) -> None:
         batch_size, num_classes = eval_output.y_hat.shape
         num_styles = len(eval_output.x['styles'])
 
@@ -88,4 +88,4 @@ class FATask(ClassificationTask[FA_X]):
 
         fig.tight_layout()
 
-        writer.add_figure(f'images/{prefix}batch_{batch_idx}', fig)
+        writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)

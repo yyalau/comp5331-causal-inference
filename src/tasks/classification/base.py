@@ -100,12 +100,12 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
             return
 
         if isinstance(self.logger, TensorBoardLogger):
-            self._log_images(self.logger.experiment, eval_output, prefix=prefix, batch_idx=batch_idx)
+            self._log_images(self.logger.experiment, eval_output, prefix=prefix)
         else:
             raise TypeError('Incorrect type of logger')
 
     @abstractmethod
-    def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[X], *, prefix: str, batch_idx: int) -> None:
+    def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[X], *, prefix: str) -> None:
         raise NotImplementedError
 
     def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
