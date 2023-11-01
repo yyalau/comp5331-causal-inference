@@ -36,16 +36,24 @@ class ERMTask(ClassificationTask[ERM_X]):
         )
 
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[ERM_X], *, prefix: str, batch_idx: int) -> None:
-        batch_size, num_classes = eval_output.y.shape
+        batch_size, num_classes = eval_output.y_hat.shape
 
         nrows = batch_size
         ncols = 2
-        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex='col', sharey='col', squeeze=False)
+        fig, axes = plt.subplots(
+            nrows=nrows, ncols=ncols,
+            sharex='col', sharey='col',
+            squeeze=False,
+            # The size needs to be large enough to avoid overlapping text in the class probability vector
+            figsize=((ncols * 12), (nrows * 12)),
+        )
 
         grid_idx = 1
         for row in range(nrows):
             example_input_img = torch.einsum('chw->hwc', eval_output.x[row]).cpu()
-            example_class_prob = eval_output.y[row].unsqueeze(1).cpu()
+            example_gt_class_idx = eval_output.y[row].argmax().item()
+            example_class_prob = eval_output.y_hat[row].unsqueeze(1).cpu()
+            example_pred_class = example_class_prob.argmax().item()
 
             for col in range(ncols):
                 ax: Axes = axes[row, col]
@@ -59,13 +67,18 @@ class ERMTask(ClassificationTask[ERM_X]):
                 if col == 0:
                     ax.imshow(example_input_img)
                 elif col == 1:
-                    ax.imshow(example_class_prob)
+                    ax.imshow(example_class_prob, aspect='auto')
 
-                    ax.set_xticks([0], [''])
-                    ax.set_yticks(list(range(num_classes)), labels=[f'Class {c_idx}' for c_idx in range(num_classes)])
                     for c_idx in list(range(num_classes)):
-                        ax.text(0, c_idx, f'{example_class_prob[c_idx, 0].item():.3f}', ha='center', va='center', color='w')
+                        if c_idx == example_pred_class:
+                            color = 'g' if c_idx == example_gt_class_idx else 'r'
+                        else:
+                            color = 'y' if c_idx == example_gt_class_idx else 'w'
+
+                        ax.text(0, c_idx, f'{example_class_prob[c_idx, 0].item():.3f}', ha='center', va='center', color=color)
 
                 grid_idx += 1
+
+        fig.tight_layout()
 
         writer.add_figure(f'images/{prefix}batch_{batch_idx}', fig)

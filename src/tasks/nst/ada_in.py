@@ -135,11 +135,14 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         eval_output_y_hat = eval_output.lazy_y_hat()
         batch_size = eval_output_y_hat.shape[0]
 
-        fig = plt.figure()
-
         nrows = batch_size
         ncols = 3
-        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex='col', sharey='col', squeeze=False)
+        fig, axes = plt.subplots(
+            nrows=nrows, ncols=ncols,
+            sharex='col', sharey='col',
+            squeeze=False,
+            figsize=((ncols * 4), (nrows * 4)),
+        )
 
         grid_idx = 1
         for row in range(nrows):
@@ -166,6 +169,8 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
                     ax.imshow(example_output_applied)
 
                 grid_idx += 1
+
+        fig.tight_layout()
 
         writer.add_figure(f'images/{prefix}batch_{batch_idx}', fig)
 
