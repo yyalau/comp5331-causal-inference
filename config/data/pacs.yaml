@@ -11,4 +11,4 @@ dataset_config:
   resize_width: 224
   interpolation_mode: "NEAREST"
   num_domains_to_sample: 2
-  num_ood_samples: 3
+  num_ood_samples: 8
