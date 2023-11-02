@@ -36,7 +36,10 @@ class ERMTask(ClassificationTask[ERM_X]):
         )
 
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[ERM_X], *, prefix: str) -> None:
-        batch_size, num_classes = eval_output.y_hat.shape
+        eval_output_x = eval_output.x.detach().cpu()
+        eval_output_y = eval_output.y.detach().cpu()
+        eval_output_y_hat = eval_output.y_hat.detach().cpu()
+        batch_size, num_classes = eval_output_y_hat.shape
 
         nrows = batch_size
         ncols = 2
@@ -50,9 +53,9 @@ class ERMTask(ClassificationTask[ERM_X]):
 
         grid_idx = 1
         for row in range(nrows):
-            example_input_img = torch.einsum('chw->hwc', eval_output.x[row]).cpu()
-            example_gt_class_idx = eval_output.y[row].argmax().item()
-            example_class_prob = torch.softmax(eval_output.y_hat[row].unsqueeze(1), dim=0).cpu()
+            example_input_img = torch.einsum('chw->hwc', eval_output_x[row])
+            example_gt_class_idx = eval_output_y[row].argmax().item()
+            example_class_prob = torch.softmax(eval_output_y_hat[row].unsqueeze(1), dim=0)
             example_pred_class = example_class_prob.argmax().item()
 
             for col in range(ncols):

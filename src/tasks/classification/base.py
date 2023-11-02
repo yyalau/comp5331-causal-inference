@@ -108,6 +108,11 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[X], *, prefix: str) -> None:
         raise NotImplementedError
 
+    def training_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
+        eval_output = self._eval_step(batch, batch_idx)
+        self._process_images(eval_output, batch_idx=batch_idx, prefix='train_')
+        return self._process_eval_loss_metrics(eval_output, prefix='')
+
     def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='val_')

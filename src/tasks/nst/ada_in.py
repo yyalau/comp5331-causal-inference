@@ -132,7 +132,9 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
             raise TypeError('Incorrect type of logger')
 
     def _log_images(self, writer: SummaryWriter, eval_output: AdaINEvalOutput, *, prefix: str) -> None:
-        eval_output_y_hat = eval_output.lazy_y_hat()
+        eval_output_x_content = eval_output.x['content'].detach().cpu()
+        eval_output_x_style = eval_output.x['style'].detach().cpu()
+        eval_output_y_hat = eval_output.lazy_y_hat().detach().cpu()
         batch_size = eval_output_y_hat.shape[0]
 
         nrows = batch_size
@@ -146,9 +148,9 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         grid_idx = 1
         for row in range(nrows):
-            example_input_content = torch.einsum('chw->hwc', eval_output.x['content'][row]).cpu()
-            example_input_style = torch.einsum('chw->hwc', eval_output.x['style'][row]).cpu()
-            example_output_applied = torch.einsum('chw->hwc', eval_output_y_hat[row]).cpu()
+            example_input_content = torch.einsum('chw->hwc', eval_output_x_content[row])
+            example_input_style = torch.einsum('chw->hwc', eval_output_x_style[row])
+            example_output_applied = torch.einsum('chw->hwc', eval_output_y_hat[row])
 
             for col in range(ncols):
                 ax: Axes = axes[row, col]
@@ -173,6 +175,11 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         fig.tight_layout()
 
         writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)
+
+    def training_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+        eval_output = self._eval_step(batch, batch_idx)
+        self._process_images(eval_output, batch_idx=batch_idx, prefix='train_')
+        return self._process_eval_loss_metrics(eval_output, prefix='')
 
     def validation_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
         eval_output = self._eval_step(batch, batch_idx)

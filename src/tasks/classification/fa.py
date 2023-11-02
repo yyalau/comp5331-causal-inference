@@ -36,8 +36,12 @@ class FATask(ClassificationTask[FA_X]):
         )
 
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[FA_X], *, prefix: str) -> None:
-        batch_size, num_classes = eval_output.y_hat.shape
-        num_styles = len(eval_output.x['styles'])
+        eval_output_x_content = eval_output.x['content'].detach().cpu()
+        eval_output_x_styles = [style.detach().cpu() for style in eval_output.x['styles']]
+        eval_output_y = eval_output.y.detach().cpu()
+        eval_output_y_hat = eval_output.y_hat.detach().cpu()
+        batch_size, num_classes = eval_output_y_hat.shape
+        num_styles = len(eval_output_x_styles)
 
         nrows = batch_size
         ncols = 2 + num_styles
@@ -51,10 +55,10 @@ class FATask(ClassificationTask[FA_X]):
 
         grid_idx = 1
         for row in range(nrows):
-            example_input_content = torch.einsum('chw->hwc', eval_output.x['content'][row]).cpu()
-            example_input_styles = [torch.einsum('chw->hwc', style[row]).cpu() for style in eval_output.x['styles']]
-            example_gt_class_idx = eval_output.y[row].argmax().item()
-            example_class_prob = torch.softmax(eval_output.y_hat[row].unsqueeze(1), dim=0).cpu()
+            example_input_content = torch.einsum('chw->hwc', eval_output_x_content[row])
+            example_input_styles = [torch.einsum('chw->hwc', style[row]) for style in eval_output_x_styles]
+            example_gt_class_idx = eval_output_y[row].argmax().item()
+            example_class_prob = torch.softmax(eval_output_y_hat[row].unsqueeze(1), dim=0)
             example_pred_class = example_class_prob.argmax().item()
 
             for col in range(ncols):

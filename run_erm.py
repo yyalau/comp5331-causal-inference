@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from lightning.pytorch.callbacks import RichProgressBar
 from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.loggers import TensorBoardLogger
 
 from src.datamodules.classification import ERMDataModule
 from src.tasks.classification import ERMTask
@@ -14,13 +16,8 @@ def cli():
         model_class=ERMTask,
         datamodule_class=ERMDataModule,
         trainer_defaults={
-            'logger': {
-                'class_path': 'TensorBoardLogger',
-                'init_args': {
-                    'save_dir': EXPERIMENTS_DIR,
-                    'name': 'erm',
-                },
-            },
+            'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='erm'),
+            'callbacks': [RichProgressBar()],
         },
         auto_configure_optimizers=False,
     )
