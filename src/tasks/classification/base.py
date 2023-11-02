@@ -64,7 +64,7 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
 
         num_classes = self.classifier.get_num_classes()
 
-        self.loss = F.cross_entropy
+        self.loss_fn = F.cross_entropy
 
         # PyTorch Lightning cannot detect and automatically set the device for each metric
         # unless they are directly set as an attribute of the LightningModule
@@ -87,8 +87,8 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         x, y = batch
         y_hat = self.classifier(x)
 
-        loss = self.loss(y_hat, y)
-        metrics = {name: metric(y_hat, y) for name, metric in self.metrics.items()}
+        loss = self.loss_fn(y_hat, y)
+        metrics = {name: metric(y_hat, y.argmax(dim=-1)) for name, metric in self.metrics.items()}
 
         return ClassificationEvalOutput(loss=loss, metrics=metrics, x=x, y=y, y_hat=y_hat)
 

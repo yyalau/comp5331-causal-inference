@@ -41,7 +41,7 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
 
         self.gamma = gamma
 
-        self.loss = self._combined_loss
+        self.loss_fn = self._combined_loss
         self.metrics = {
             'content_loss': self._content_loss,
             'style_loss': self._style_loss,
