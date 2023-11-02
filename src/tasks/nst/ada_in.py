@@ -132,9 +132,9 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
             raise TypeError('Incorrect type of logger')
 
     def _log_images(self, writer: SummaryWriter, eval_output: AdaINEvalOutput, *, prefix: str) -> None:
-        eval_output_x_content = eval_output.x['content'].detach().cpu()
-        eval_output_x_style = eval_output.x['style'].detach().cpu()
-        eval_output_y_hat = eval_output.lazy_y_hat().detach().cpu()
+        eval_output_x_content = eval_output.x['content'].detach().cpu().float()
+        eval_output_x_style = eval_output.x['style'].detach().cpu().float()
+        eval_output_y_hat = eval_output.lazy_y_hat().detach().cpu().float()
         batch_size = eval_output_y_hat.shape[0]
 
         nrows = batch_size

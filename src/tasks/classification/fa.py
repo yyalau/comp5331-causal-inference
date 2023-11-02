@@ -36,10 +36,10 @@ class FATask(ClassificationTask[FA_X]):
         )
 
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[FA_X], *, prefix: str) -> None:
-        eval_output_x_content = eval_output.x['content'].detach().cpu()
-        eval_output_x_styles = [style.detach().cpu() for style in eval_output.x['styles']]
-        eval_output_y = eval_output.y.detach().cpu()
-        eval_output_y_hat = eval_output.y_hat.detach().cpu()
+        eval_output_x_content = eval_output.x['content'].detach().cpu().float()
+        eval_output_x_styles = [style.detach().cpu().float() for style in eval_output.x['styles']]
+        eval_output_y = eval_output.y.detach().cpu().float()
+        eval_output_y_hat = eval_output.y_hat.detach().cpu().float()
         batch_size, num_classes = eval_output_y_hat.shape
         num_styles = len(eval_output_x_styles)
 
