@@ -14,7 +14,7 @@ import torchvision.transforms.v2 as T
 
 from .augmentation import RandAugment
 
-__all__ = ['ImageLoader']
+__all__ = ['ImageLoader', "RandAugmentParams", "ImageResizeParams", "PreprocessParams"]
 
 
 Tensor: TypeAlias = torch.Tensor

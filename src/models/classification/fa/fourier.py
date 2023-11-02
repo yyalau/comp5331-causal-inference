@@ -24,7 +24,7 @@ class FourierMix(nn.Module):
         self.eta = eta
 
     def forward(self, x: torch.Tensor, x_prime: torch.Tensor):
-        # Input image shape: (batch_size, num_channels, depth, height, width)
+        # Input image shape: (batch_size, num_channels, height, width)
         try:
             assert x.shape == x_prime.shape
         except:

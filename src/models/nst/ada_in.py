@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from ..base import NNModule
 
@@ -12,7 +11,13 @@ __all__ = ['AdaINEncoder', 'AdaINDecoder', 'AdaINModel']
 
 
 class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
-    def __init__(self, wpath: str = None):
+    """
+    Parameters
+    ----------
+    wpath : str, optional
+        If given, loads the weights of the encoder from the provided path.
+    """
+    def __init__(self, *, wpath: str | None = None):
         super().__init__()
         # https://drive.google.com/u/0/uc?id=1EpkBA2K2eYILDSyPTt0fztz59UjAIpZU&export=download
 
@@ -20,19 +25,19 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.Conv2d(in_channels=3, out_channels=3, kernel_size=1),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3),
-            nn.ReLU(inplace=True), # First layer from which Style Loss is calculated
+            nn.ReLU(inplace=True),  # First layer from which Style Loss is calculated
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3),
-            nn.ReLU(inplace=True), # Second layer from which Style Loss is calculated
+            nn.ReLU(inplace=True),  # Second layer from which Style Loss is calculated
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
-            nn.ReflectionPad2d(padding=1), # Third layer from which Style Loss is calculated
+            nn.ReflectionPad2d(padding=1),  # Third layer from which Style Loss is calculated
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
@@ -47,7 +52,7 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3),
-            nn.ReLU(inplace=True), # This is Relu 4.1 The output layer of the encoder.
+            nn.ReLU(inplace=True),  # This is Relu 4.1 The output layer of the encoder.
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
@@ -69,11 +74,17 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
-            nn.ReLU(inplace=True)
-            )
+            nn.ReLU(inplace=True),
+        )
 
-        self.load_weights(wpath)
-        
+        if wpath is not None:
+            self.load_weights(wpath)
+
+    def load_weights(self, path: str) -> None:
+        """
+        Loads the weights for the VGG19 model from a given path.
+        """
+        self.vgg19.load_state_dict(torch.load(path))
 
     def get_states(self, batch: torch.Tensor) -> list[torch.Tensor]:
         """
@@ -95,12 +106,18 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
 
 
 class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
-    def __init__(self, wpath: str = None):
+    """
+    Parameters
+    ----------
+    wpath : str, optional
+        If given, loads the weights of the decoder from the provided path.
+    """
+    def __init__(self, *, wpath: str | None = None):
         super().__init__()
 
         # https://drive.google.com/u/0/uc?id=1bMfhMMwPeXnYSQI6cDWElSZxOxc6aVyr&export=download
-        
-        self.padding = nn.ReflectionPad2d(padding=1) # Using reflection padding as described in vgg19
+
+        self.padding = nn.ReflectionPad2d(padding=1)  # Using reflection padding as described in vgg19
         self.UpSample = nn.Upsample(scale_factor=2, mode="nearest")
 
         self.conv4_1 = nn.Conv2d(in_channels=512, out_channels=256, kernel_size=3, stride=1, padding=0)
@@ -116,53 +133,59 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
         self.conv1_1 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
         self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=0)
 
-        
+
         self.net = nn.Sequential(
             self.padding,
             self.conv4_1,
             nn.ReLU(inplace=True),
             self.UpSample,
-            
+
             self.padding,
             self.conv3_1,
             nn.ReLU(inplace=True),
-            
+
             self.padding,
             self.conv3_2,
             nn.ReLU(inplace=True),
-            
+
             self.padding,
             self.conv3_3,
             nn.ReLU(inplace=True),
-            
+
             self.padding,
             self.conv3_4,
             nn.ReLU(inplace=True),
             self.UpSample,
-            
+
             self.padding,
             self.conv2_1,
             nn.ReLU(inplace=True),
-            
+
             self.padding,
             self.conv2_2,
             nn.ReLU(inplace=True),
             self.UpSample,
-            
+
             self.padding,
             self.conv1_1,
             nn.ReLU(inplace=True),
-            
+
             self.padding,
             self.conv1_2,
         )
-        self.load_weights(wpath)
 
+        if wpath is not None:
+            self.load_weights(wpath)
 
     def forward(self, x: torch.Tensor):
         return self.net(x)
 
-
+    def load_weights(self, path)-> None:
+        """
+        Loads the weights for the VGG19 model from a given path.
+        """
+        if path is not None:
+            self.net.load_state_dict(torch.load(path))
 
 class AdaINModel(nn.Module, StyleTransferModel):
     """
@@ -207,6 +230,6 @@ class AdaINModel(nn.Module, StyleTransferModel):
         enc_style = self.encoder(x['style'])
         enc_content = self.encoder(x['content'])
         alpha = self.alpha
-    
+
         enc_applied = alpha * self.ada_in(enc_content, enc_style) + (1 - alpha) * enc_content
         return self.decoder(enc_applied)

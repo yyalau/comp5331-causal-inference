@@ -1,8 +1,10 @@
-batch_size: 16
-num_workers: 7
+batch_size: 32
+num_workers: 2
 dataset_config:
   dataset_path_root: "./data/digits_dg"
   dataset_name: "DIGITS"
+  num_classes : 64
+  starts_from_zero : True
   train_val_domains: ['mnist', 'mnist_m', 'svhn']
   test_domains: ['mnist', 'mnist_m', 'syn']
   lazy: False
@@ -10,9 +12,8 @@ dataset_config:
     image_resize_params:
       height: 32
       width: 32
-      interpolation_mode: "NEAREST"
+      interpolation_mode: "BILINEAR"
     rand_augment_params:
       alpha: 1
       beta: 1
-  num_domains_to_sample: 2
-  num_ood_samples: 3
+  k: 3
