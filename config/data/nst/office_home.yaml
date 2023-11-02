@@ -1,5 +1,5 @@
-batch_size: 2
-num_workers: 4
+batch_size: 32
+num_workers: 2
 dataset_config:
   dataset_path_root: "./data/OfficeHomeDataset_10072016"
   dataset_name: "OFFICE"
@@ -10,6 +10,6 @@ dataset_config:
   lazy: False
   preprocess_params:
     image_resize_params:
-      height: 32
-      width: 32
-      interpolation_mode: "NEAREST"
+      height: 224
+      width: 224
+      interpolation_mode: "BILINEAR"

@@ -1,5 +1,5 @@
-batch_size: 16
-num_workers: 7
+batch_size: 32
+num_workers: 2
 dataset_config:
   dataset_path_root: "./data/digits_dg"
   dataset_name: "DIGITS"
@@ -12,6 +12,5 @@ dataset_config:
     image_resize_params:
       height: 32
       width: 32
-      interpolation_mode: "NEAREST"
-  num_domains_to_sample: 1
-  num_ood_samples: 1
+      interpolation_mode: "BILINEAR"
+  k: 1
