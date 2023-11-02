@@ -5,6 +5,11 @@ from collections.abc import Mapping
 import copy
 from dataclasses import dataclass
 from enum import Enum
+from ..func import (
+    get_flattened_index,
+    sample_dictionary,
+    sample_sequence_delete
+)
 
 import numpy as np
 
@@ -22,11 +27,6 @@ from typing_extensions import TypeAlias
 from ...tasks.classification import Classification_Y, FA_X, ERM_X
 from ...tasks.nst import StyleTransfer_X
 
-from ..func import (
-    get_flattened_index,
-    sample_dictionary,
-    sample_sequence_and_remove_from_population,
-)
 from ..utils import download_from_gdrive, unzip
 
 from ..image import ImageLoader, PreprocessParams
@@ -74,14 +74,8 @@ class DatasetConfig:
         Lazy initialization of the images.
     preprocess_params : PreprocessParams
         Parameters for preprocessing the image.
-    num_domains_to_sample : int
-        The number of domains to sample from for
-        each training, validation or testing sample.
-        Note that the value of this param must be
-        less than the number of domains listed in
-        train_val_domains and test_domains.
-    num_ood_samples : int
-        Number of images to sample per ood domain.
+    k : Optional[int]:
+        Size of samples for style images
     """
 
     dataset_path_root: Path
@@ -90,9 +84,7 @@ class DatasetConfig:
     test_domains: List[str]
     lazy: bool
     preprocess_params: PreprocessParams
-    num_domains_to_sample: Optional[int]
-    num_ood_samples: Optional[int]
-
+    k: Optional[int]
 
 class DatasetPartition(str, Enum):
     TRAIN = "train"
@@ -147,8 +139,7 @@ class ImageDataset(Dataset[DatasetOutput]):
 
         self.lazy = config.lazy
         self.partition = partition
-        self.num_domains_to_sample = config.num_domains_to_sample
-        self.num_ood_samples = config.num_ood_samples
+        self.k = config.k
         self.dataset_path_root = config.dataset_path_root
         self.preprocessor_params = config.preprocess_params
         if not config.dataset_path_root.exists():
@@ -180,65 +171,43 @@ class ImageDataset(Dataset[DatasetOutput]):
     def __len__(self) -> int:
         return self.len
 
-    def _ood_sample(
-        self, domain_list: List[str], num_domains_to_sample: int, num_ood_samples: int
-    ) -> List[Tensor]:
+    def _ood_sample(self, batch_size: int) -> Tensor:
         domain_data_map = copy.deepcopy(self.domain_data_map)
-        styles: List[Tensor] = []
-        for domain in domain_list:
-            domain_styles: List[Tensor] = []
-            for ood_domain in sample_dictionary(
-                domain_data_map,
-                num_domains_to_sample,
-                lambda other_domain: other_domain != domain,
-            ):
-                for sample in sample_sequence_and_remove_from_population(
-                    domain_data_map[ood_domain], num_ood_samples
-                ):
-                    domain_styles.append((sample.load()))
-            styles.append(torch.stack(domain_styles[:len(domain_list)]))
-        return styles
+        domains = sample_dictionary(domain_data_map, batch_size, True)
+        return torch.stack([
+            sample_sequence_delete(domain_data_map[domain]).load()
+            for domain in domains
+        ])
+
 
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]
-    ) -> Tuple[Tensor, Tensor, List[str]]:
+    ) -> Tuple[Tensor, Tensor]:
         content = torch.stack([data.image for data in batch])
         labels = torch.from_numpy((np.array([data.label for data in batch])))
-        domains = [data.domain for data in batch]
-        return content, labels, domains
+        return content, labels
 
     def num_domains(self) -> int:
         return len(self.domain_data_map.keys())
 
     def collate_erm(self, batch: List[DatasetOutput]) -> Tuple[ERM_X, Classification_Y]:
-        content, labels, _ = self._create_tensors_from_batch(batch)
+        content, labels = self._create_tensors_from_batch(batch)
         return content, labels
 
     def collate_st(self, batch: List[DatasetOutput]) -> StyleTransfer_X:
-        content, _, domains = self._create_tensors_from_batch(batch)
-        style = torch.concat(self._ood_sample(domains, 1, 1))
+        batch_size = len(batch)
+        content, _ = self._create_tensors_from_batch(batch)
+        style = self._ood_sample(batch_size)
         return StyleTransfer_X(content=content, style=style)
 
     def collate_fa(
         self,
         batch: List[DatasetOutput],
     ) -> Tuple[FA_X, Classification_Y]:
-        num_domains_to_sample, num_ood_samples = self._validate_ood_sample_size()
-        content, labels, domains = self._create_tensors_from_batch(batch)
-        styles = self._ood_sample(domains, num_domains_to_sample, num_ood_samples)
+        batch_size = len(batch)
+        k = self.k
+        if k is None:
+            raise ValueError("Sample size `k` has not been set")
+        content, labels = self._create_tensors_from_batch(batch)
+        styles = [self._ood_sample(batch_size) for _ in range(k)]
         return FA_X(content=content, styles=styles), labels
-
-    def _validate_ood_sample_size(self) -> Tuple[int, int]:
-        domain_len = len(self.domains)
-
-        num_domains_to_sample = self.num_domains_to_sample
-        num_ood_samples = self.num_ood_samples
-
-        if num_domains_to_sample is None or num_ood_samples is None:
-            raise ValueError("Values for collate are empty")
-
-        if num_domains_to_sample >= domain_len:
-            raise ValueError(
-                f"Cannot sample {num_domains_to_sample} from domain list of length {domain_len}."
-            )
-        return num_domains_to_sample, num_ood_samples
