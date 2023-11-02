@@ -91,7 +91,7 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
         pretrain_path = "weights/vgg19/vgg_normalised.pth"
         model_url = "https://drive.google.com/u/0/uc?id=1EpkBA2K2eYILDSyPTt0fztz59UjAIpZU&export=download"
         
-        if pretrain and (path is not None or path != pretrain_path):
+        if pretrain and (path is not None and path != pretrain_path):
             raise ValueError(f"Pretrain is True but weights is not {pretrain_path}. Specify the path if you want to load your own weights with pretrain=False")
             
         if pretrain: 
@@ -207,7 +207,7 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
         pretrain_path = "weights/decoder/decoder.pth"
         model_url = "https://drive.google.com/u/0/uc?id=1bMfhMMwPeXnYSQI6cDWElSZxOxc6aVyr&export=download"
         
-        if pretrain and (path is not None or path != pretrain_path):
+        if pretrain and (path is not None and path != pretrain_path):
             raise ValueError(f"Pretrain is True but weights is not {pretrain_path}. Specify the path if you want to load your own weights with pretrain=False")
 
         if pretrain: 
