@@ -8,7 +8,8 @@ from enum import Enum
 from ..func import (
     get_flattened_index,
     sample_dictionary,
-    sample_sequence_delete
+    sample_sequence_delete,
+    sample_sequence_no_replace
 )
 
 import numpy as np
@@ -30,7 +31,8 @@ from ...tasks.nst import StyleTransfer_X
 from ..utils import download_from_gdrive, unzip
 
 from ..image import ImageLoader, PreprocessParams
-
+from functools import reduce
+import operator
 __all__ = [
     "ImageDataset",
     "SupportedDatasets",
@@ -172,11 +174,11 @@ class ImageDataset(Dataset[DatasetOutput]):
         return self.len
 
     def _ood_sample(self, batch_size: int) -> Tensor:
-        domain_data_map = copy.deepcopy(self.domain_data_map)
-        domains = sample_dictionary(domain_data_map, batch_size, True)
+        pool = list(reduce(operator.concat, self.domain_data_map.values()))
+        samples = sample_sequence_no_replace(pool, batch_size)
         return torch.stack([
-            sample_sequence_delete(domain_data_map[domain]).load()
-            for domain in domains
+            image_reader.load()
+            for image_reader in samples
         ])
 
 

@@ -71,7 +71,7 @@ def sample_sequence_replace(
     Samples a specified number of elements from a given list with
     replacement, optionally filtering them based on a provided predicate.
     """
-    samples = random.sample(value, num_samples)
+    samples = random.choices(value, k=num_samples)
     return list(filter(predicate, samples))
 
 
