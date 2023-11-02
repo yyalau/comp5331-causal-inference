@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from lightning.pytorch.callbacks import RichProgressBar
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -17,7 +16,6 @@ def cli():
         datamodule_class=FADataModule,
         trainer_defaults={
             'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='fa'),
-            'callbacks': [RichProgressBar()],
         },
         auto_configure_optimizers=False,
     )
