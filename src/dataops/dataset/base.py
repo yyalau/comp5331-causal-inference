@@ -2,19 +2,15 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Mapping
-import copy
 from dataclasses import dataclass
 from enum import Enum
-from ..func import (
-    get_flattened_index,
-    sample_dictionary,
-    sample_sequence_delete,
-    sample_sequence_no_replace
-)
+from functools import reduce
+import operator
+from pathlib import Path
+from typing import List, Optional, Tuple
+from typing_extensions import TypeAlias
 
 import numpy as np
-
-from pathlib import Path
 
 # from PIL import Image
 from pydantic import BaseModel
@@ -22,17 +18,14 @@ from pydantic import BaseModel
 from torch.utils.data import Dataset
 import torch
 
-from typing import List, Optional, Tuple
-from typing_extensions import TypeAlias
-
 from ...tasks.classification import Classification_Y, FA_X, ERM_X
 from ...tasks.nst import StyleTransfer_X
 
-from ..utils import download_from_gdrive, unzip
-
 from ..image import ImageLoader, PreprocessParams
-from functools import reduce
-import operator
+from ..utils import download_from_gdrive, unzip
+from ..func import get_flattened_index, sample_sequence_no_replace
+
+
 __all__ = [
     "ImageDataset",
     "SupportedDatasets",

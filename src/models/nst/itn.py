@@ -89,6 +89,7 @@ class ItnModel(nn.Module, StyleTransferModel):
        and Huajin Tang. 2019. Image Neural Style Transfer With Preserving the Salient Regions.
        *IEEE Access 7* (2019), 40027--40037. <https://doi.org/10.1109/access.2019.2891576>
     """
+
     def __init__(self):
         super().__init__()
 

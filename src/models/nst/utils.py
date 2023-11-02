@@ -8,18 +8,18 @@ from torch.autograd import Variable
 
 
 
-def tensor_load_rgbimage(filename, size=None, scale=None):
+def tensor_load_rgbimage(filename: str, *, size: int | None = None, scale: int | None = None):
     img = Image.open(filename)
     if size is not None:
-        img = img.resize((size, size), Image.ANTIALIAS)
+        img = img.resize((size, size), Image.LANCZOS)
     elif scale is not None:
-        img = img.resize((int(img.size[0] / scale), int(img.size[1] / scale)), Image.ANTIALIAS)
+        img = img.resize((int(img.size[0] / scale), int(img.size[1] / scale)), Image.LANCZOS)
     img = np.array(img).transpose(2, 0, 1)
     img = torch.from_numpy(img).float()
     return img
 
 
-def tensor_save_rgbimage(tensor, filename, cuda=False):
+def tensor_save_rgbimage(tensor: torch.Tensor, filename: str, *, cuda: bool = False):
     if cuda:
         img = tensor.clone().cpu().clamp(0, 255).numpy()
     else:
@@ -29,12 +29,12 @@ def tensor_save_rgbimage(tensor, filename, cuda=False):
     img.save(filename)
 
 
-def tensor_save_bgrimage(tensor, filename, cuda=False):
+def tensor_save_bgrimage(tensor: torch.Tensor, filename: str, *, cuda: bool = False):
     (b, g, r) = torch.chunk(tensor, 3)
     tensor = torch.cat((r, g, b))
     tensor_save_rgbimage(tensor, filename, cuda)
 
-def tensor_return_bgrimage(tensor, cuda=False):
+def tensor_return_bgrimage(tensor: torch.Tensor, *, cuda: bool = False):
     (b, g, r) = torch.chunk(tensor, 3)
     tensor = torch.cat((r, g, b))
     if cuda:
@@ -49,7 +49,7 @@ def tensor_return_bgrimage(tensor, cuda=False):
     return img
 
 
-def gram_matrix(y):
+def gram_matrix(y: torch.Tensor):
     (b, ch, h, w) = y.size()
     features = y.view(b, ch, w * h)
     features_t = features.transpose(1, 2)
@@ -57,7 +57,7 @@ def gram_matrix(y):
     return gram
 
 
-def subtract_imagenet_mean_batch(batch):
+def subtract_imagenet_mean_batch(batch: torch.Tensor):
     tensortype = type(batch.data)
     mean = tensortype(batch.data.size())
     mean[:, 0, :, :] = 103.939
@@ -66,7 +66,7 @@ def subtract_imagenet_mean_batch(batch):
     batch = batch.sub(Variable(mean))
     return batch
 
-def subtract_mean_std_batch(batch):
+def subtract_mean_std_batch(batch: torch.Tensor):
     tensortype = type(batch.data)
     batch = batch.div(255)
     mean = tensortype(batch.data.size())
@@ -82,14 +82,14 @@ def subtract_mean_std_batch(batch):
     return batch
 
 
-def preprocess_batch(batch):
+def preprocess_batch(batch: torch.Tensor):
     batch = batch.transpose(0, 1)
     (r, g, b) = torch.chunk(batch, 3)
     batch = torch.cat((b, g, r))
     batch = batch.transpose(0, 1)
     return batch
 
-def depreprocess_batch(batch):
+def depreprocess_batch(batch: torch.Tensor):
     batch = batch.transpose(0, 1)
     (b, g, r) = torch.chunk(batch, 3)
     batch = torch.cat((r, g, b))
