@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -18,6 +18,7 @@ def cli():
         trainer_defaults={
             'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='erm'),
             'callbacks': [
+                LearningRateMonitor(),
                 ModelCheckpoint(
                     filename='{epoch}-{step}-{val_loss:.3f}',
                     monitor='val_loss',

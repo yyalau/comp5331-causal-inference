@@ -39,6 +39,10 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         )
 
         self.network = network
+        self.w_style = w_style
+        self.w_content = w_content
+
+        self.gamma = gamma
 
         self.loss = self._combined_loss
         self.metrics = {
@@ -134,7 +138,7 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
 
         
         # 8, 256, 32, 32-> 8, 256, 16, 16 -> 8, 256, 8, 8 -> 8, 256, 4, 4
-        loss = self.loss(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
+        loss = self.loss_fn(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
         metrics = {name: metric(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc) 
                    for name, metric in self.metrics.items()}
         

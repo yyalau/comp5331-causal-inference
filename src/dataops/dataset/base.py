@@ -197,7 +197,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         labels = torch.from_numpy((np.array([data.label for data in batch])))
         if not self.starts_from_zero:
             labels = labels - 1
-        one_hot_labels = torch.nn.functional.one_hot(labels, num_classes)
+        one_hot_labels = torch.nn.functional.one_hot(labels, num_classes).float()
         return content, one_hot_labels
 
     def num_domains(self) -> int:
