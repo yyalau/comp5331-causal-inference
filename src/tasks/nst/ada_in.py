@@ -3,6 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
+from matplotlib.axes import Axes
+import matplotlib.pyplot as plt
+
 import torch
 from torch.nn import functional as F
 from torch.optim import Optimizer
@@ -64,8 +67,8 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         self.loss = self._combined_loss
         self.metrics = {
-            'content_loss': self._content_loss,
-            'style_loss': self._style_loss,
+            'closs': self._content_loss,
+            'sloss': self._style_loss,
         }
 
         self.img_log_freq = img_log_freq
@@ -75,7 +78,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
     def _style_loss_fn(self, input_states: list[torch.Tensor], target_states: list[torch.Tensor]) -> torch.Tensor:
         device = input_states[0].device
-        std_loss, mean_loss = torch.tensor(0.0, device = device), torch.tensor(0.0, device = device)
+        std_loss, mean_loss = torch.tensor(0.0, device=device), torch.tensor(0.0, device=device)
 
         for input_state, target_state in zip(input_states, target_states):
             input_std, input_mean = torch.std_mean(input_state, dim=(-2, -1))
@@ -124,15 +127,59 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
             return
 
         if isinstance(self.logger, TensorBoardLogger):
-            writer = self.logger.experiment
-            if isinstance(writer, SummaryWriter):
-                writer.add_images(f'images/x_style/{prefix}{batch_idx}', eval_output.x['style'], self.current_epoch)
-                writer.add_images(f'images/x_content/{prefix}{batch_idx}', eval_output.x['content'], self.current_epoch)
-                writer.add_images(f'images/y_hat/{prefix}{batch_idx}', eval_output.lazy_y_hat(), self.current_epoch)
-            else:
-                raise TypeError('Incorrect type of writer')
+            self._log_images(self.logger.experiment, eval_output, prefix=prefix)
         else:
             raise TypeError('Incorrect type of logger')
+
+    def _log_images(self, writer: SummaryWriter, eval_output: AdaINEvalOutput, *, prefix: str) -> None:
+        eval_output_x_content = eval_output.x['content'].detach().cpu().float()
+        eval_output_x_style = eval_output.x['style'].detach().cpu().float()
+        eval_output_y_hat = eval_output.lazy_y_hat().detach().cpu().float()
+        batch_size = eval_output_y_hat.shape[0]
+
+        nrows = batch_size
+        ncols = 3
+        fig, axes = plt.subplots(
+            nrows=nrows, ncols=ncols,
+            sharex='col', sharey='col',
+            squeeze=False,
+            figsize=((ncols * 4), (nrows * 4)),
+        )
+
+        grid_idx = 1
+        for row in range(nrows):
+            example_input_content = torch.einsum('chw->hwc', eval_output_x_content[row])
+            example_input_style = torch.einsum('chw->hwc', eval_output_x_style[row])
+            example_output_applied = torch.einsum('chw->hwc', eval_output_y_hat[row])
+
+            for col in range(ncols):
+                ax: Axes = axes[row, col]
+
+                if row == 0:
+                    if col == 0:
+                        ax.set_title('Content Image')
+                    elif col == 1:
+                        ax.set_title('Style Image')
+                    elif col == 2:
+                        ax.set_title('Applied Image')
+
+                if col == 0:
+                    ax.imshow(example_input_content)
+                elif col == 1:
+                    ax.imshow(example_input_style)
+                elif col == 2:
+                    ax.imshow(example_output_applied)
+
+                grid_idx += 1
+
+        fig.tight_layout()
+
+        writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)
+
+    def training_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+        eval_output = self._eval_step(batch, batch_idx)
+        self._process_images(eval_output, batch_idx=batch_idx, prefix='train_')
+        return self._process_eval_loss_metrics(eval_output, prefix='')
 
     def validation_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
         eval_output = self._eval_step(batch, batch_idx)
