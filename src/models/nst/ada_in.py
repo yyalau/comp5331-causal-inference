@@ -14,8 +14,9 @@ __all__ = ['AdaINEncoder', 'AdaINDecoder', 'AdaINModel']
 class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     def __init__(self, wpath: str = None):
         super().__init__()
+        # https://drive.google.com/u/0/uc?id=1EpkBA2K2eYILDSyPTt0fztz59UjAIpZU&export=download
 
-        self.vgg19 = nn.Sequential(
+        self.net = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=3, kernel_size=1),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3),
@@ -72,13 +73,6 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             )
 
         self.load_weights(wpath)
-
-    def load_weights(self, path)-> None:
-        """
-        Loads the weights for the VGG19 model from a given path.
-        """
-        if path is not None:
-            self.vgg19.load_state_dict(torch.load(path))
         
 
     def get_states(self, batch: torch.Tensor) -> list[torch.Tensor]:
@@ -88,7 +82,7 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
         :meth:`torch.nn.Module.__call__`.
         """
         states = []
-        for i, layer in enumerate(self.vgg19):
+        for i, layer in enumerate(self.net):
             batch = layer(batch)
 
             if i in [3, 10, 17, 30]:
@@ -168,12 +162,7 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     def forward(self, x: torch.Tensor):
         return self.net(x)
 
-    def load_weights(self, path)-> None:
-        """
-        Loads the weights for the VGG19 model from a given path.
-        """
-        if path is not None:
-            self.net.load_state_dict(torch.load(path))
+
 
 class AdaINModel(nn.Module, StyleTransferModel):
     """
