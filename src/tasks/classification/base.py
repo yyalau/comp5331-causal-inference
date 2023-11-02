@@ -47,6 +47,7 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         Controls how often the input (`x`), ground truth (`y`) and output (`y_hat`) images are logged to TensorBoard.
         Specifically, they are logged every `img_log_freq` batches during model evaluation.
     """
+
     def __init__(
         self,
         classifier: ClassificationModel[X],
@@ -82,6 +83,15 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         }
 
         self.img_log_freq = img_log_freq
+
+        self.save_hyperparameters(dict(
+            optimizer=self.optimizer,
+            scheduler=self.scheduler,
+            classifier=dict(
+                name=type(self.classifier).__name__,
+                hparams=self.classifier.get_hparams(),
+            ),
+        ))
 
     def _eval_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> ClassificationEvalOutput[X]:
         x, y = batch

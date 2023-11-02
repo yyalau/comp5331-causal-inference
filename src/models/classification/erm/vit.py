@@ -23,22 +23,22 @@ def pair(t: MaybePair[T]) -> tuple[T, T]:
 # classes
 
 class FeedForward(nn.Module):
-    def __init__(self, dim: int, hidden_dim: int, dropout: float = 0.):
+    def __init__(self, dim: int, hidden_dim: int, dropout_rate: float = 0.):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
             nn.GELU(),
-            nn.Dropout(dropout),
+            nn.Dropout(dropout_rate),
             nn.Linear(hidden_dim, dim),
-            nn.Dropout(dropout)
+            nn.Dropout(dropout_rate)
         )
 
     def forward(self, x: torch.Tensor):
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim: int, heads: int = 8, dim_head: int = 64, dropout: float = 0.):
+    def __init__(self, dim: int, heads: int = 8, dim_head: int = 64, dropout_rate: float = 0.):
         super().__init__()
         inner_dim = dim_head * heads
         project_out = not (heads == 1 and dim_head == dim)
@@ -49,13 +49,13 @@ class Attention(nn.Module):
         self.norm = nn.LayerNorm(dim)
 
         self.attend = nn.Softmax(dim = -1)
-        self.dropout = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(dropout_rate)
 
         self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
 
         self.to_out = nn.Sequential(
             nn.Linear(inner_dim, dim),
-            nn.Dropout(dropout)
+            nn.Dropout(dropout_rate)
         ) if project_out else nn.Identity()
 
     def forward(self, x: torch.Tensor):
@@ -74,14 +74,14 @@ class Attention(nn.Module):
         return self.to_out(out)
 
 class Transformer(nn.Module):
-    def __init__(self, dim: int, depth: int, heads: int, dim_head: int, mlp_dim: int, dropout: float = 0.):
+    def __init__(self, dim: int, depth: int, heads: int, dim_head: int, mlp_dim: int, dropout_rate: float = 0.):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout),
-                FeedForward(dim, mlp_dim, dropout = dropout)
+                Attention(dim, heads = heads, dim_head = dim_head, dropout_rate = dropout_rate),
+                FeedForward(dim, mlp_dim, dropout_rate = dropout_rate)
             ]))
 
     def forward(self, x: torch.Tensor):
@@ -108,6 +108,7 @@ class ViT(nn.Module, ERMModel):
        An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale.
        In *ICLR 2021*. <https://doi.org/10.48550/arXiv.2010.11929>
     """
+
     def __init__(
         self,
         *,
@@ -121,12 +122,23 @@ class ViT(nn.Module, ERMModel):
         pool: Literal['cls', 'mean'] = 'cls',
         channels: int = 3,
         dim_head: int = 64,
-        dropout: float = 0.,
-        emb_dropout: float = 0.,
+        dropout_rate: float = 0.,
+        emb_dropout_rate: float = 0.,
     ):
         super().__init__()
 
+        self._image_size = image_size
+        self._patch_size = patch_size
         self._num_classes = num_classes
+        self._dim = dim
+        self._depth = depth
+        self._heads = heads
+        self._mlp_dim = mlp_dim
+        self._pool = pool
+        self._channels = channels
+        self._dim_head = dim_head
+        self._dropout_rate = dropout_rate
+        self._emb_dropout_rate = emb_dropout_rate
 
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -146,17 +158,80 @@ class ViT(nn.Module, ERMModel):
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-        self.dropout = nn.Dropout(emb_dropout)
+        self.emb_dropout = nn.Dropout(emb_dropout_rate)
 
-        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout_rate)
 
-        self.pool = pool
         self.to_latent = nn.Identity()
 
         self.mlp_head = nn.Linear(dim, num_classes)
 
-    def get_num_classes(self) -> int:
+    @property
+    def image_size(self) -> MaybePair[int]:
+        return self._image_size
+
+    @property
+    def patch_size(self) -> MaybePair[int]:
+        return self._patch_size
+
+    @property
+    def num_classes(self) -> int:
         return self._num_classes
+
+    @property
+    def dim(self) -> int:
+        return self._dim
+
+    @property
+    def depth(self) -> int:
+        return self._depth
+
+    @property
+    def heads(self) -> int:
+        return self._heads
+
+    @property
+    def mlp_dim(self) -> int:
+        return self._mlp_dim
+
+    @property
+    def pool(self) -> str:
+        return self._pool
+
+    @property
+    def channels(self) -> int:
+        return self._channels
+
+    @property
+    def dim_head(self) -> int:
+        return self._dim_head
+
+    @property
+    def dropout_rate(self) -> float:
+        return self._dropout_rate
+
+    @property
+    def emb_dropout_rate(self) -> float:
+        return self._emb_dropout_rate
+
+    def get_num_classes(self) -> int:
+        return self.num_classes
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(
+            image_size=self.image_size,
+            patch_size=self.patch_size,
+            num_classes=self.num_classes,
+            dim=self.dim,
+            depth=self.depth,
+            heads=self.heads,
+            mlp_dim=self.mlp_dim,
+            pool=self.pool,
+            channels=self.channels,
+            dim_head=self.dim_head,
+            dropout_rate=self.dropout_rate,
+            emb_dropout_rate=self.emb_dropout_rate,
+        )
 
     def forward(self, img: ERM_X):
         x = self.to_patch_embedding(img)
@@ -165,7 +240,7 @@ class ViT(nn.Module, ERMModel):
         cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b = b)
         x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding[:, :(n + 1)]
-        x = self.dropout(x)
+        x = self.emb_dropout(x)
 
         x = self.transformer(x)
 

@@ -47,6 +47,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         Controls how often the input style (`x_style`), input content (`x_content`) and output (`y_hat`) images are logged to TensorBoard.
         Specifically, they are logged every `img_log_freq` batches during model evaluation.
     """
+
     def __init__(
         self,
         network: AdaINModel,
@@ -72,6 +73,16 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         }
 
         self.img_log_freq = img_log_freq
+
+        self.save_hyperparameters(dict(
+            optimizer=self.optimizer,
+            scheduler=self.scheduler,
+            gamma=gamma,
+            network=dict(
+                name=type(self.network).__name__,
+                hparams=self.network.get_hparams(),
+            ),
+        ))
 
     def _content_loss_fn(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return F.mse_loss(input_, target)

@@ -67,10 +67,13 @@ class SmallConvNet(nn.Module, ERMModel):
         Deep domain-adversarial image generation for domain generalisation.
         <https://arxiv.org/pdf/2003.06054.pdf>
     """
+
     def __init__(self, num_classes: int = 10, pretrained_path: Path | None = None) -> None:
         super().__init__()
 
-        self.num_classes = num_classes
+        self._num_classes = num_classes
+        self._pretrained_path = pretrained_path
+
         self.backbone = ConvNet()
         self.classifier = nn.Linear(in_features=self.backbone.out_features, out_features=num_classes)
 
@@ -80,9 +83,20 @@ class SmallConvNet(nn.Module, ERMModel):
             else:
                 raise ValueError(f'provided path {pretrained_path} does not exist to load the pretrained params.')
 
-    def forward(self, x: ERM_X) -> Classification_Y:
-        backbone = self.backbone(x)
-        return self.classifier(backbone)
+    @property
+    def num_classes(self) -> int:
+        return self._num_classes
+
+    @property
+    def pretrained_path(self) -> Path | None:
+        return self._pretrained_path
 
     def get_num_classes(self) -> int:
         return self.num_classes
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(num_classes=self.num_classes, pretrained_path=self.pretrained_path)
+
+    def forward(self, x: ERM_X) -> Classification_Y:
+        backbone = self.backbone(x)
+        return self.classifier(backbone)

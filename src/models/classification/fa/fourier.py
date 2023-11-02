@@ -18,6 +18,7 @@ class FourierMix(nn.Module):
     eta : float, default 2.0
         A hyperparameter controlling the maximum style mixing rate.
     """
+
     def __init__(self, eta: float = 0.5) -> None:
         super().__init__()
 
@@ -25,9 +26,8 @@ class FourierMix(nn.Module):
 
     def forward(self, x: torch.Tensor, x_prime: torch.Tensor):
         # Input image shape: (batch_size, num_channels, height, width)
-        try:
-            assert x.shape == x_prime.shape
-        except:
+        if x.shape != x_prime.shape:
+            print(f'WARNING: Shapes are not equal. Found: {x.shape} vs. {x_prime.shape}')
             return x
 
         x_fft = fft.fft2(x, dim=(-2, -1))

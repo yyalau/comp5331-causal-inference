@@ -43,7 +43,7 @@ class BasicBlock(nn.Module):
         self.downsample = downsample
         self.stride = stride
 
-    def forward(self, x:ERM_X):
+    def forward(self, x: ERM_X):
         residual = x
 
         out = self.conv1(x)
@@ -189,10 +189,12 @@ class ResNet18(nn.Module, ERMModel):
        eep residual learning for image recognition. In *CVPR*. 770--778.
        <https://doi.org/10.48550/arXiv.1512.03385>
     """
+
     def __init__(self, *, num_classes: int, pretrained_url: str = model_urls['resnet18']):
         super().__init__()
 
         self._num_classes = num_classes
+        self._pretrained_url = pretrained_url
 
         self.backbone = resnet18(pretrained_url)
         feature_dim = self.backbone.out_features
@@ -204,8 +206,19 @@ class ResNet18(nn.Module, ERMModel):
         if num_classes > 0:
             self.classifier = nn.Linear(feature_dim, num_classes)
 
-    def get_num_classes(self) -> int:
+    @property
+    def num_classes(self) -> int:
         return self._num_classes
+
+    @property
+    def pretrained_url(self) -> str:
+        return self._pretrained_url
+
+    def get_num_classes(self) -> int:
+        return self.num_classes
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(num_classes=self.num_classes, pretrained_url=self.pretrained_url)
 
     def forward(self, x: ERM_X) -> Classification_Y:
         f = self.backbone(x)

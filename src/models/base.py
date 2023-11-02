@@ -31,3 +31,9 @@ class NNModule(Protocol[X_contra, Y_co]):
         Same as :meth:`torch.nn.Module.parameters`.
         """
         ...
+
+    def get_hparams(self) -> dict[str, object]:
+        """
+        Obtains the hyperparameters of this module.
+        """
+        ...

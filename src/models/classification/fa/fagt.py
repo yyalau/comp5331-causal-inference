@@ -40,6 +40,7 @@ class FAGT(nn.Module, FAModel):
        Association for Computing Machinery, New York, NY, USA, 1746--1757.
        <https://doi.org/10.1145/3580305.3599270>
     """
+
     def __init__(
         self,
         nst: StyleTransferModel,
@@ -51,18 +52,62 @@ class FAGT(nn.Module, FAModel):
     ) -> None:
         super().__init__()
 
+        self._nst = nst
+        self._classifier = classifier
+        self._eta = eta
+        self._beta = beta
+        self._pixel_mean = pixel_mean
+        self._pixel_std = pixel_std
+
         self.fst = FourierMix(eta)
-        self.nst = nst
-        self.classifier = classifier
-        self.beta = beta
         self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
 
         # The NST model is considered frozen when training by FA
         for p in self.nst.parameters():
             p.requires_grad = False
 
+    @property
+    def nst(self) -> StyleTransferModel:
+        return self._nst
+
+    @property
+    def classifier(self) -> ERMModel:
+        return self._classifier
+
+    @property
+    def eta(self) -> float:
+        return self._eta
+
+    @property
+    def beta(self) -> float:
+        return self._beta
+
+    @property
+    def pixel_mean(self) -> tuple[float, float, float]:
+        return self._pixel_mean
+
+    @property
+    def pixel_std(self) -> tuple[float, float, float]:
+        return self._pixel_std
+
     def get_num_classes(self) -> int:
         return self.classifier.get_num_classes()
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(
+            nst=dict(
+                name=type(self.nst).__name__,
+                hparams=self.nst.get_hparams(),
+            ),
+            classifier=dict(
+                name=type(self.classifier).__name__,
+                hparams=self.classifier.get_hparams(),
+            ),
+            eta=self.eta,
+            beta=self.beta,
+            pixel_mean=self.pixel_mean,
+            pixel_std=self.pixel_std,
+        )
 
     def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')

@@ -1,11 +1,11 @@
 from __future__ import annotations
-import os, sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../dataops")))
+
+import os
 
 import torch
 import torch.nn as nn
 
-from utils import download_from_gdrive
+from ...dataops.utils import download_from_gdrive
 
 from ..base import NNModule
 
@@ -18,12 +18,17 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     """
     Parameters
     ----------
+    pretrain : bool, default True
+        If `True`, loads the weights of the encoder from online.
     wpath : str, optional
         If given, loads the weights of the encoder from the provided path.
     """
 
     def __init__(self, *, pretrain: bool = True, wpath: str | None = None):
         super().__init__()
+
+        self._pretrain = pretrain
+        self._wpath = wpath
 
         self.net = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=3, kernel_size=1),
@@ -81,30 +86,45 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.ReLU(inplace=True),
         )
 
-        self.load_weights(pretrain, wpath)
+        self.load_weights(pretrain=pretrain, path=wpath)
 
-    def load_weights(self, pretrain: bool, path: str) -> None:
+    @property
+    def pretrain(self) -> bool:
+        return self._pretrain
+
+    @property
+    def wpath(self) -> str | None:
+        return self._wpath
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(
+            pretrain=self.pretrain,
+            wpath=self.wpath,
+        )
+
+    def load_weights(self, *, pretrain: bool, path: str | None) -> None:
         """
         Loads the weights for the VGG19 model from a given path.
         """
-        
+
         pretrain_path = "weights/vgg19/vgg_normalised.pth"
         model_url = "https://drive.google.com/u/0/uc?id=1EpkBA2K2eYILDSyPTt0fztz59UjAIpZU&export=download"
-        
+
         if pretrain and (path is not None and path != pretrain_path):
             raise ValueError(f"Pretrain is True but weights is not {pretrain_path}. Specify the path if you want to load your own weights with pretrain=False")
-            
-        if pretrain: 
+
+        if pretrain:
             path = pretrain_path
-            if not os.path.exists(path): 
+            if not os.path.exists(path):
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 download_from_gdrive(model_url, path)
 
-        if not os.path.exists(path): 
-            raise FileNotFoundError(f"Could not find weights at {path}")
-        
-        self.net.load_state_dict(torch.load(path))
-        
+        if path is not None:
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Could not find weights at {path}")
+
+            self.net.load_state_dict(torch.load(path))
+
 
     def get_states(self, batch: torch.Tensor) -> list[torch.Tensor]:
         """
@@ -129,13 +149,19 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     """
     Parameters
     ----------
+    pretrain : bool, default True
+        If `True`, loads the weights of the decoder from online.
     wpath : str, optional
         If given, loads the weights of the decoder from the provided path.
     """
+
     def __init__(self, *, pretrain: bool = True, wpath: str | None = None):
         super().__init__()
 
-        # 
+        self._pretrain = pretrain
+        self._wpath = wpath
+
+        #
 
         self.padding = nn.ReflectionPad2d(padding=1)  # Using reflection padding as described in vgg19
         self.UpSample = nn.Upsample(scale_factor=2, mode="nearest")
@@ -194,33 +220,48 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             self.conv1_2,
         )
 
-        self.load_weights(pretrain, wpath)
+        self.load_weights(pretrain=pretrain, path=wpath)
+
+    @property
+    def pretrain(self) -> bool:
+        return self._pretrain
+
+    @property
+    def wpath(self) -> str | None:
+        return self._wpath
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(
+            pretrain=self.pretrain,
+            wpath=self.wpath,
+        )
 
     def forward(self, x: torch.Tensor):
         return self.net(x)
 
-    def load_weights(self, pretrain: bool, path: str) -> None:
+    def load_weights(self, *, pretrain: bool, path: str | None) -> None:
         """
         Loads the weights for the model from a given path.
         """
-        
+
         pretrain_path = "weights/decoder/decoder.pth"
         model_url = "https://drive.google.com/u/0/uc?id=1bMfhMMwPeXnYSQI6cDWElSZxOxc6aVyr&export=download"
-        
+
         if pretrain and (path is not None and path != pretrain_path):
             raise ValueError(f"Pretrain is True but weights is not {pretrain_path}. Specify the path if you want to load your own weights with pretrain=False")
 
-        if pretrain: 
+        if pretrain:
             path = pretrain_path
-            if not os.path.exists(path): 
+            if not os.path.exists(path):
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 download_from_gdrive(model_url, path)
 
-        if not os.path.exists(path): 
-            raise FileNotFoundError(f"Could not find weights at {path}")
-        
-        self.net.load_state_dict(torch.load(path))
-        
+        if path is not None:
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Could not find weights at {path}")
+
+            self.net.load_state_dict(torch.load(path))
+
 
 class AdaINModel(nn.Module, StyleTransferModel):
     """
@@ -249,10 +290,35 @@ class AdaINModel(nn.Module, StyleTransferModel):
     ) -> None:
         super().__init__()
 
-        self.encoder = encoder
-        self.decoder = decoder
+        self._encoder = encoder
+        self._decoder = decoder
 
-        self.alpha = alpha
+        self._alpha = alpha
+
+    @property
+    def encoder(self) -> AdaINEncoder:
+        return self._encoder
+
+    @property
+    def decoder(self) -> AdaINDecoder:
+        return self._decoder
+
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(
+            encoder=dict(
+                name=type(self.encoder).__name__,
+                hparams=self.encoder.get_hparams(),
+            ),
+            decoder=dict(
+                name=type(self.decoder).__name__,
+                hparams=self.decoder.get_hparams(),
+            ),
+            alpha=self._alpha
+        )
 
     def ada_in(self, content: torch.Tensor, style: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
         content_std, content_mean = torch.std_mean(content, dim=(-2, -1), keepdim=True)

@@ -11,8 +11,8 @@ classifier:
     pool: 'cls' # ['cls', 'mean'] 
     channels: 3
     dim_head: 64 
-    dropout: 0.
-    emb_dropout: 0.
+    dropout_rate: 0.
+    emb_dropout_rate: 0.
 optimizer:
   class_path: torch.optim.Adam
 scheduler:

@@ -3,6 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
+from matplotlib.axes import Axes
+import matplotlib.pyplot as plt
+
 import torch
 from torch.nn import functional as F
 from torch.optim import Optimizer
@@ -35,7 +38,7 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
     ) -> None:
         super().__init__(
             optimizer=optimizer,
-            scheduler=scheduler,    
+            scheduler=scheduler,
         )
 
         self.network = network
@@ -54,46 +57,54 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
 
         # cam
         self.w_softmax = torch.squeeze(list(self.network.squeeze_net.parameters())[-2])
-        
+
+        self.save_hyperparameters(dict(
+            optimizer=self.optimizer,
+            scheduler=self.scheduler,
+            network=dict(
+                name=type(self.network).__name__,
+                hparams=self.network.get_hparams(),
+            ),
+        ))
 
     def _content_loss(self, feat_x: StyleTransfer_Y, feat_y: StyleTransfer_Y) -> torch.Tensor:
         return F.mse_loss(feat_x[2], feat_y[2])
-    
+
 
     def _style_loss(self, feat_xc, feat_xs: StyleTransfer_Y) -> torch.Tensor:
-        
+
         def gram_matrix(y):
             (b, ch, h, w) = y.size()
             features = y.view(b, ch, w * h)
             features_t = features.transpose(1, 2)
             gram = features.bmm(features_t) / (ch * h * w)
-            return gram 
-    
-        style_loss = 0            
+            return gram
+
+        style_loss = 0
         for x,y in zip(feat_xc, feat_xs):
             style_loss += F.mse_loss(*map( gram_matrix, (x, y)))
-            
+
         return style_loss
-    
+
     def _category_loss(self, y_hat: StyleTransfer_Y, y: StyleTransfer_Y) -> torch.Tensor:
         return F.cross_entropy(y_hat, y)
-    
+
     def _cam_loss(self, label_id_x: StyleTransfer_Y, label_id_y: StyleTransfer_Y) -> torch.Tensor:
-        
+
         def get_cam(feature_conv, class_idx):
             b, nc, h, w = feature_conv.shape #8, 512, 1, 1
-            cam = torch.einsum('...ij,...jk->ik', 
-                               self.w_softmax[class_idx], 
+            cam = torch.einsum('...ij,...jk->ik',
+                               self.w_softmax[class_idx],
                                feature_conv.view(b, nc, -1))
             return cam
-        
+
         x_cam = get_cam(self.network.features_blobs[0], label_id_x)
         y_cam = get_cam(self.network.features_blobs[1], label_id_y)
-        
+
         return F.mse_loss(x_cam, y_cam)
-    
+
     def _combined_loss(self, features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc) -> torch.Tensor:
-        content_loss = self._content_loss(features_xc, features_yc) 
+        content_loss = self._content_loss(features_xc, features_yc)
         style_loss = self._style_loss(features_yc, features_xs)
         cam_loss = self._cam_loss(label_id_xc, label_id_yc)
         category_loss = self._category_loss(logit_yc, label_id_xc)
@@ -101,8 +112,8 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         return 10000*category_loss + 80* cam_loss + self.w_style * style_loss + self.w_content * content_loss
 
     def _eval_step(self, batch, batch_idx) -> ItnEvalOutput:
-        
-        
+
+
         '''
         features: pass through vgg
         logit: pass through squeeze net
@@ -115,33 +126,33 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         ## TODO: refactor this part
         if self.w_softmax.device != batch['content'].device:
             self.w_softmax = self.w_softmax.to(batch['content'].device)
-        
-        
+
+
         def get_rank(logits):
             h = F.softmax(logits, dim=1)
             _, idx = h.sort(dim = 1, descending = True)
             return idx[:,0]
-        
-        
+
+
         xc, xs = batch['content'], batch['style']
         yc = self.network.transfer_model(xc) # 8, 3, 32,32
-        
+
         logit_xc, logit_yc = map(self.network.squeeze_net, (xc, yc)) # 8, 1000
         label_id_xc, label_id_yc = map(get_rank, (logit_xc, logit_yc))
-        
+
 
         features_xc, features_yc = map(self.network.vgg16.get_states, (xc, yc)) # 8, 1000
         features_xs = self.network.vgg16.get_states(xs)
 
-        
+
         # 8, 256, 32, 32-> 8, 256, 16, 16 -> 8, 256, 8, 8 -> 8, 256, 4, 4
         loss = self.loss_fn(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
-        metrics = {name: metric(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc) 
+        metrics = {name: metric(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
                    for name, metric in self.metrics.items()}
-        
-        
+
+
         return ItnEvalOutput(loss=loss, metrics=metrics, x=batch, lazy_y_hat=lambda: self.network(batch))
-    
+
 
     def forward(self, x: StyleTransfer_X) -> StyleTransfer_Y:
         return self.network(x)
@@ -215,5 +226,3 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')
-
-    

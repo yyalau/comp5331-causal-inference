@@ -38,6 +38,7 @@ class FAFT(nn.Module, FAModel):
        Association for Computing Machinery, New York, NY, USA, 1746--1757.
        <https://doi.org/10.1145/3580305.3599270>
     """
+
     def __init__(
         self,
         classifier: ERMModel,
@@ -48,13 +49,49 @@ class FAFT(nn.Module, FAModel):
     ) -> None:
         super().__init__()
 
+        self._classifier = classifier
+        self._eta = eta
+        self._beta = beta
+        self._pixel_mean = pixel_mean
+        self._pixel_std = pixel_std
+
         self.fst = FourierMix(eta)
-        self.classifier = classifier
-        self.beta = beta
         self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
+
+    @property
+    def classifier(self) -> ERMModel:
+        return self._classifier
+
+    @property
+    def eta(self) -> float:
+        return self._eta
+
+    @property
+    def beta(self) -> float:
+        return self._beta
+
+    @property
+    def pixel_mean(self) -> tuple[float, float, float]:
+        return self._pixel_mean
+
+    @property
+    def pixel_std(self) -> tuple[float, float, float]:
+        return self._pixel_std
 
     def get_num_classes(self) -> int:
         return self.classifier.get_num_classes()
+
+    def get_hparams(self) -> dict[str, object]:
+        return dict(
+            classifier=dict(
+                name=type(self.classifier).__name__,
+                hparams=self.classifier.get_hparams(),
+            ),
+            eta=self.eta,
+            beta=self.beta,
+            pixel_mean=self.pixel_mean,
+            pixel_std=self.pixel_std,
+        )
 
     def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')
