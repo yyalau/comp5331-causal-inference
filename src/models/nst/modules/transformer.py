@@ -4,12 +4,12 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-__all__ = ['TransformerNet']
+__all__ = ['TransferNet']
 
 
-class TransformerNet(nn.Module):
+class TransferNet(nn.Module):
     def __init__(self):
-        super(TransformerNet, self).__init__()
+        super(TransferNet, self).__init__()
 
         # Initial convolution layers
         self.conv1 = ConvLayer(3, 32, kernel_size=9, stride=1)

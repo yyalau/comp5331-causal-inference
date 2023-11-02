@@ -1,7 +1,11 @@
 from __future__ import annotations
+import os, sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../dataops")))
 
 import torch
 import torch.nn as nn
+
+from utils import download_from_gdrive
 
 from ..base import NNModule
 
@@ -17,9 +21,9 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     wpath : str, optional
         If given, loads the weights of the encoder from the provided path.
     """
-    def __init__(self, *, wpath: str | None = None):
+
+    def __init__(self, *, pretrain: bool = True, wpath: str | None = None):
         super().__init__()
-        # https://drive.google.com/u/0/uc?id=1EpkBA2K2eYILDSyPTt0fztz59UjAIpZU&export=download
 
         self.net = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=3, kernel_size=1),
@@ -77,14 +81,30 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             nn.ReLU(inplace=True),
         )
 
-        if wpath is not None:
-            self.load_weights(wpath)
+        self.load_weights(pretrain, wpath)
 
-    def load_weights(self, path: str) -> None:
+    def load_weights(self, pretrain: bool, path: str) -> None:
         """
         Loads the weights for the VGG19 model from a given path.
         """
-        self.vgg19.load_state_dict(torch.load(path))
+        
+        pretrain_path = "weights/vgg19/vgg_normalised.pth"
+        model_url = "https://drive.google.com/u/0/uc?id=1EpkBA2K2eYILDSyPTt0fztz59UjAIpZU&export=download"
+        
+        if pretrain and (path is not None or path != pretrain_path):
+            raise ValueError(f"Pretrain is True but weights is not {pretrain_path}. Specify the path if you want to load your own weights with pretrain=False")
+            
+        if pretrain: 
+            path = pretrain_path
+            if not os.path.exists(path): 
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                download_from_gdrive(model_url, path)
+
+        if not os.path.exists(path): 
+            raise FileNotFoundError(f"Could not find weights at {path}")
+        
+        self.net.load_state_dict(torch.load(path))
+        
 
     def get_states(self, batch: torch.Tensor) -> list[torch.Tensor]:
         """
@@ -112,10 +132,10 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     wpath : str, optional
         If given, loads the weights of the decoder from the provided path.
     """
-    def __init__(self, *, wpath: str | None = None):
+    def __init__(self, *, pretrain: bool = True, wpath: str | None = None):
         super().__init__()
 
-        # https://drive.google.com/u/0/uc?id=1bMfhMMwPeXnYSQI6cDWElSZxOxc6aVyr&export=download
+        # 
 
         self.padding = nn.ReflectionPad2d(padding=1)  # Using reflection padding as described in vgg19
         self.UpSample = nn.Upsample(scale_factor=2, mode="nearest")
@@ -174,18 +194,33 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
             self.conv1_2,
         )
 
-        if wpath is not None:
-            self.load_weights(wpath)
+        self.load_weights(pretrain, wpath)
 
     def forward(self, x: torch.Tensor):
         return self.net(x)
 
-    def load_weights(self, path)-> None:
+    def load_weights(self, pretrain: bool, path: str) -> None:
         """
-        Loads the weights for the VGG19 model from a given path.
+        Loads the weights for the model from a given path.
         """
-        if path is not None:
-            self.net.load_state_dict(torch.load(path))
+        
+        pretrain_path = "weights/decoder/decoder.pth"
+        model_url = "https://drive.google.com/u/0/uc?id=1bMfhMMwPeXnYSQI6cDWElSZxOxc6aVyr&export=download"
+        
+        if pretrain and (path is not None or path != pretrain_path):
+            raise ValueError(f"Pretrain is True but weights is not {pretrain_path}. Specify the path if you want to load your own weights with pretrain=False")
+
+        if pretrain: 
+            path = pretrain_path
+            if not os.path.exists(path): 
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                download_from_gdrive(model_url, path)
+
+        if not os.path.exists(path): 
+            raise FileNotFoundError(f"Could not find weights at {path}")
+        
+        self.net.load_state_dict(torch.load(path))
+        
 
 class AdaINModel(nn.Module, StyleTransferModel):
     """

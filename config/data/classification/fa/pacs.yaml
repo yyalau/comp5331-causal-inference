@@ -3,8 +3,8 @@ num_workers: 2
 dataset_config:
   dataset_path_root: "./data/pacs"
   dataset_name: "PACS"
-  num_classes : 64
-  starts_from_zero : True
+  num_classes : 7
+  starts_from_zero : False
   train_val_domains: ['art_painting', 'cartoon', 'photo']
   test_domains: ['cartoon', 'photo','sketch']
   lazy: False

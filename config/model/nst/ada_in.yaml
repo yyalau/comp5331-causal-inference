@@ -4,10 +4,12 @@ network:
     encoder: 
       class_path: src.models.nst.AdaINEncoder
       init_args: 
-        wpath: "weights/vgg19/vgg_normalised.pth"
+        pretrain: True
+        # wpath: "weights/vgg19/vgg_normalised.pth"
     decoder: 
       class_path: src.models.nst.AdaINDecoder
       init_args: 
+        # pretrain: True
         wpath: "weights/decoder/decoder.pth"
 optimizer:
   class_path: torch.optim.Adam

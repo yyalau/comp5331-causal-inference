@@ -4,8 +4,7 @@ classifier:
     classifier:
       class_path: src.models.classification.erm.ResNet18
       init_args:
-        num_classes: 100
-        pretrained: True
+        num_classes: 7
 optimizer:
   class_path: torch.optim.SGD
   init_args:

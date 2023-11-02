@@ -63,7 +63,7 @@ class FATask(ClassificationTask[FA_X]):
 
             for col in range(ncols):
                 ax: Axes = axes[row, col]
-                style_idx = col - 2
+                style_idx = col - 1
 
                 if row == 0:
                     if style_idx < 0:

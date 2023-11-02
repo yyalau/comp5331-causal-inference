@@ -35,16 +35,14 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
     ) -> None:
         super().__init__(
             optimizer=optimizer,
-            scheduler=scheduler,
+            scheduler=scheduler,    
         )
 
         self.network = network
         self.w_style = w_style
         self.w_content = w_content
 
-        self.gamma = gamma
-
-        self.loss = self._combined_loss
+        self.loss_fn = self._combined_loss
         self.metrics = {
             'content_loss': self._content_loss,
             'style_loss': self._style_loss,
@@ -59,7 +57,6 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         
 
     def _content_loss(self, feat_x: StyleTransfer_Y, feat_y: StyleTransfer_Y) -> torch.Tensor:
-        # self.network.vgg16(y_hat)
         return F.mse_loss(feat_x[2], feat_y[2])
     
 
@@ -142,7 +139,6 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         metrics = {name: metric(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc) 
                    for name, metric in self.metrics.items()}
         
-        import ipdb; ipdb.set_trace()
         
         return ItnEvalOutput(loss=loss, metrics=metrics, x=batch, lazy_y_hat=lambda: self.network(batch))
     

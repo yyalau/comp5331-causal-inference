@@ -65,7 +65,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         self.gamma = gamma
 
-        self.loss_fn = self._combined_loss
+        self.loss = self._combined_loss
         self.metrics = {
             'closs': self._content_loss,
             'sloss': self._style_loss,
@@ -114,7 +114,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         enc_applied_states = self.network.encoder.get_states(applied)
 
-        loss = self.loss_fn(enc_applied_states, enc_style_states, enc_content)
+        loss = self.loss(enc_applied_states, enc_style_states, enc_content)
         metrics = {name: metric(enc_applied_states, enc_style_states, enc_content) for name, metric in self.metrics.items()}
 
         return AdaINEvalOutput(loss=loss, metrics=metrics, x=x, lazy_y_hat=lambda: self.network(batch))
