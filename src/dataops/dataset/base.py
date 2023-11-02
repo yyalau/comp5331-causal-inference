@@ -68,6 +68,10 @@ class DatasetConfig:
         The path to the root directory containing the data.
     dataset_name : SupportedDatasets
         The name of the dataset.
+    num_classes : int
+        Number of classes included in the datastets.
+    starts_from_zero : bool
+        Specifies wether the class labels start from zero or not.
     train_val_domains : List[str]
         The domains to use for training and validation.
     test_domains: List[str]
@@ -82,6 +86,8 @@ class DatasetConfig:
 
     dataset_path_root: Path
     dataset_name: SupportedDatasets
+    num_classes: int
+    starts_from_zero: bool
     train_val_domains: List[str]
     test_domains: List[str]
     lazy: bool
@@ -138,7 +144,8 @@ class ImageDataset(Dataset[DatasetOutput]):
     def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
         super().__init__()
         self._validate_config_params(config)
-
+        self.num_classes = config.num_classes
+        self.starts_from_zero = config.starts_from_zero
         self.lazy = config.lazy
         self.partition = partition
         self.k = config.k
@@ -185,9 +192,13 @@ class ImageDataset(Dataset[DatasetOutput]):
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]
     ) -> Tuple[Tensor, Tensor]:
+        num_classes = self.num_classes
         content = torch.stack([data.image for data in batch])
         labels = torch.from_numpy((np.array([data.label for data in batch])))
-        return content, labels
+        if not self.starts_from_zero:
+            labels = labels - 1
+        one_hot_labels = torch.nn.functional.one_hot(labels, num_classes)
+        return content, one_hot_labels
 
     def num_domains(self) -> int:
         return len(self.domain_data_map.keys())

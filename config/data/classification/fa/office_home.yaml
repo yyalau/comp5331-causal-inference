@@ -3,6 +3,8 @@ num_workers: 4
 dataset_config:
   dataset_path_root: "./data/OfficeHomeDataset_10072016"
   dataset_name: "OFFICE"
+  num_classes : 64
+  starts_from_zero : True
   train_val_domains: ['Art', 'Clipart', 'Product']
   test_domains: ['Art', 'Clipart', 'Real World']
   lazy: False
