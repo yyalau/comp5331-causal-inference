@@ -75,9 +75,9 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         self._f1 = F1Score(task='multiclass', num_classes=num_classes)
 
         self.metrics = {
-            'accuracy': self._accuracy,
-            'precision': self._precision,
-            'recall': self._recall,
+            'acc': self._accuracy,
+            'pre': self._precision,
+            'rec': self._recall,
             'f1': self._f1,
         }
 

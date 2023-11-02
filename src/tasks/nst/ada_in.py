@@ -67,8 +67,8 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         self.loss = self._combined_loss
         self.metrics = {
-            'content_loss': self._content_loss,
-            'style_loss': self._style_loss,
+            'closs': self._content_loss,
+            'sloss': self._style_loss,
         }
 
         self.img_log_freq = img_log_freq

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -16,6 +17,13 @@ def cli():
         datamodule_class=AdaINDataModule,
         trainer_defaults={
             'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='nst'),
+            'callbacks': [
+                ModelCheckpoint(
+                    filename='{epoch}-{step}-{val_loss:.3f}',
+                    monitor='val_loss',
+                    save_last=True,
+                ),
+            ],
         },
         auto_configure_optimizers=False,
     )
