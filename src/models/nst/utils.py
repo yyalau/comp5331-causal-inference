@@ -1,11 +1,10 @@
-import os
+from __future__ import annotations
 
 import numpy as np
 import torch
 from PIL import Image
 from torch.autograd import Variable
 # from torch.utils.serialization import load_lua
-
 
 
 def tensor_load_rgbimage(filename: str, *, size: int | None = None, scale: int | None = None):
@@ -17,7 +16,6 @@ def tensor_load_rgbimage(filename: str, *, size: int | None = None, scale: int |
     img = np.array(img).transpose(2, 0, 1)
     img = torch.from_numpy(img).float()
     return img
-
 
 def tensor_save_rgbimage(tensor: torch.Tensor, filename: str, *, cuda: bool = False):
     if cuda:
@@ -32,7 +30,7 @@ def tensor_save_rgbimage(tensor: torch.Tensor, filename: str, *, cuda: bool = Fa
 def tensor_save_bgrimage(tensor: torch.Tensor, filename: str, *, cuda: bool = False):
     (b, g, r) = torch.chunk(tensor, 3)
     tensor = torch.cat((r, g, b))
-    tensor_save_rgbimage(tensor, filename, cuda)
+    tensor_save_rgbimage(tensor, filename, cuda=cuda)
 
 def tensor_return_bgrimage(tensor: torch.Tensor, *, cuda: bool = False):
     (b, g, r) = torch.chunk(tensor, 3)
