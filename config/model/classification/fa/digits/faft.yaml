@@ -6,9 +6,10 @@ classifier:
     pixel_mean: [0.0, 0.0, 0.0]
     pixel_std: [1.0, 1.0, 1.0]
     classifier:
-      class_path: src.models.classification.erm.ResNet18
+      class_path: src.models.classification.erm.SmallConvNet
       init_args:
         num_classes: 10
+        pretrained_path: null
 optimizer:
   class_path: torch.optim.SGD
   init_args:

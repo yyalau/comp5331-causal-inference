@@ -9,6 +9,7 @@ classifier:
       class_path: src.models.classification.erm.ResNet18
       init_args:
         num_classes: 7
+        pretrained_url: https://download.pytorch.org/models/resnet18-5c106cde.pth
 optimizer:
   class_path: torch.optim.SGD
   init_args:

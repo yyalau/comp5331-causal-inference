@@ -9,6 +9,7 @@ classifier:
       class_path: src.models.classification.erm.ResNet18
       init_args:
         num_classes: 7
+        pretrained_url: https://download.pytorch.org/models/resnet18-5c106cde.pth
 optimizer:
   class_path: torch.optim.SGD
   init_args:
@@ -16,6 +17,6 @@ optimizer:
     momentum: 0.9
     weight_decay: 5e-4
 scheduler:
-  class_path: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
   init_args:
     T_max: 30
