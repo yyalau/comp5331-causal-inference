@@ -1,0 +1,21 @@
+classifier:
+  class_path: src.models.classification.fa.FAFT
+  init_args:
+    beta: 0.45
+    eta: 1.0
+    pixel_mean: [0.0, 0.0, 0.0]
+    pixel_std: [1.0, 1.0, 1.0]
+    classifier:
+      class_path: src.models.classification.erm.ResNet18
+      init_args:
+        num_classes: 10
+optimizer:
+  class_path: torch.optim.SGD
+  init_args:
+    lr: 0.05
+    momentum: 0.9
+    weight_decay: 5e-4
+scheduler:
+  class_path: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  init_args:
+    T_max: 50

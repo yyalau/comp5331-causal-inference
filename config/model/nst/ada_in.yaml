@@ -1,7 +1,8 @@
 network: 
   class_path: src.models.nst.ada_in.AdaINModel
-  init_args: 
-    encoder: 
+  init_args:
+    alpha: 0.8
+    encoder:
       class_path: src.models.nst.AdaINEncoder
       init_args: 
         pretrain: True

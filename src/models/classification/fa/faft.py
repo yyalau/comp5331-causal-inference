@@ -21,8 +21,9 @@ class FAFT(nn.Module, FAModel):
     ----------
     classifier : ERMModel
         The classifier model to use in the network.
-    eta : float, default 2.0
+    eta : float, default 1.0
         A hyperparameter controlling the maximum style mixing rate.
+        This value should be between 0.0 and 1.0 inclusive.
     beta : float, default 0.2
         The interpolation coefficient between the original image and the stylized image.
     pixel_mean : tuple of float, default (0.5, 0.5, 0.5)
@@ -42,7 +43,7 @@ class FAFT(nn.Module, FAModel):
     def __init__(
         self,
         classifier: ERMModel,
-        eta: float = 2.0,
+        eta: float = 1.0,
         beta: float = 0.2,
         pixel_mean: tuple[float, float, float] = (0.5, 0.5, 0.5),
         pixel_std: tuple[float, float, float] = (0.5, 0.5, 0.5),
