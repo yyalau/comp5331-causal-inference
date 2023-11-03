@@ -94,9 +94,6 @@ class SmallConvNet(nn.Module, ERMModel):
     def get_num_classes(self) -> int:
         return self.num_classes
 
-    def get_hparams(self) -> dict[str, object]:
-        return dict(num_classes=self.num_classes, pretrained_path=self.pretrained_path)
-
     def forward(self, x: ERM_X) -> Classification_Y:
         backbone = self.backbone(x)
         return self.classifier(backbone)

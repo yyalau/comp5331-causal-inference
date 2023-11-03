@@ -3,7 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Generic, TypeVar
+
+import yaml
 
 import torch
 from torch.optim import Optimizer
@@ -63,6 +66,34 @@ class BaseTask(pl.LightningModule, Generic[Eval_X, Eval_Out, Infer_X, Infer_Y], 
         self.log_dict(prefixed_loss_metrics, prog_bar=True)
 
         return prefixed_loss_metrics
+
+    def _log_cli_config(self) -> None:
+        logger = self.logger
+        if logger is None:
+            return
+
+        log_dir = logger.log_dir
+        if log_dir is None:
+            return
+
+        config_path = Path(log_dir) / 'config.yaml'
+        with config_path.open() as f:
+            config = yaml.load(f, yaml.SafeLoader)
+            if config is not None:
+                print(config)
+                logger.log_hyperparams(config)
+
+    def on_train_start(self) -> None:
+        self._log_cli_config()
+
+    def on_validation_start(self) -> None:
+        self._log_cli_config()
+
+    def on_test_start(self) -> None:
+        self._log_cli_config()
+
+    def on_predict_start(self) -> None:
+        self._log_cli_config()
 
     def training_step(self, batch: Eval_X, batch_idx: int) -> dict[str, torch.Tensor]:  # pyright: ignore[reportIncompatibleMethodOverride]
         eval_output = self._eval_step(batch, batch_idx)

@@ -93,22 +93,6 @@ class FAGT(nn.Module, FAModel):
     def get_num_classes(self) -> int:
         return self.classifier.get_num_classes()
 
-    def get_hparams(self) -> dict[str, object]:
-        return dict(
-            nst=dict(
-                name=type(self.nst).__name__,
-                hparams=self.nst.get_hparams(),
-            ),
-            classifier=dict(
-                name=type(self.classifier).__name__,
-                hparams=self.classifier.get_hparams(),
-            ),
-            eta=self.eta,
-            beta=self.beta,
-            pixel_mean=self.pixel_mean,
-            pixel_std=self.pixel_std,
-        )
-
     def forward(self, input: FA_X) -> Classification_Y:
         content = input.get('content')
         styles = input.get('styles')

@@ -1,5 +1,6 @@
 chardet==5.2.*
 gdown==4.7.*
+PyYAML==6.0.*
 einops==0.7.*
 opencv-python==4.8.*
 lightning[pytorch-extra]==2.0.*

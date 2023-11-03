@@ -217,22 +217,6 @@ class ViT(nn.Module, ERMModel):
     def get_num_classes(self) -> int:
         return self.num_classes
 
-    def get_hparams(self) -> dict[str, object]:
-        return dict(
-            image_size=self.image_size,
-            patch_size=self.patch_size,
-            num_classes=self.num_classes,
-            dim=self.dim,
-            depth=self.depth,
-            heads=self.heads,
-            mlp_dim=self.mlp_dim,
-            pool=self.pool,
-            channels=self.channels,
-            dim_head=self.dim_head,
-            dropout_rate=self.dropout_rate,
-            emb_dropout_rate=self.emb_dropout_rate,
-        )
-
     def forward(self, img: ERM_X):
         x = self.to_patch_embedding(img)
         b, n, _ = x.shape

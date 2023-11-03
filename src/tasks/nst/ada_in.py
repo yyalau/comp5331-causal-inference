@@ -74,16 +74,6 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         self.img_log_freq = img_log_freq
 
-        self.save_hyperparameters(dict(
-            optimizer=self.optimizer,
-            scheduler=self.scheduler,
-            gamma=gamma,
-            network=dict(
-                name=type(self.network).__name__,
-                hparams=self.network.get_hparams(),
-            ),
-        ))
-
     def _content_loss_fn(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return F.mse_loss(input_, target)
 

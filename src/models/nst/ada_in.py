@@ -96,12 +96,6 @@ class AdaINEncoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     def wpath(self) -> str | None:
         return self._wpath
 
-    def get_hparams(self) -> dict[str, object]:
-        return dict(
-            pretrain=self.pretrain,
-            wpath=self.wpath,
-        )
-
     def load_weights(self, *, pretrain: bool, path: str | None) -> None:
         """
         Loads the weights for the VGG19 model from a given path.
@@ -230,12 +224,6 @@ class AdaINDecoder(nn.Module, NNModule[torch.Tensor, torch.Tensor]):
     def wpath(self) -> str | None:
         return self._wpath
 
-    def get_hparams(self) -> dict[str, object]:
-        return dict(
-            pretrain=self.pretrain,
-            wpath=self.wpath,
-        )
-
     def forward(self, x: torch.Tensor):
         return self.net(x)
 
@@ -306,19 +294,6 @@ class AdaINModel(nn.Module, StyleTransferModel):
     @property
     def alpha(self) -> float:
         return self._alpha
-
-    def get_hparams(self) -> dict[str, object]:
-        return dict(
-            encoder=dict(
-                name=type(self.encoder).__name__,
-                hparams=self.encoder.get_hparams(),
-            ),
-            decoder=dict(
-                name=type(self.decoder).__name__,
-                hparams=self.decoder.get_hparams(),
-            ),
-            alpha=self._alpha
-        )
 
     def ada_in(self, content: torch.Tensor, style: torch.Tensor, eps: float = 1e-5) -> torch.Tensor:
         content_std, content_mean = torch.std_mean(content, dim=(-2, -1), keepdim=True)

@@ -217,9 +217,6 @@ class ResNet18(nn.Module, ERMModel):
     def get_num_classes(self) -> int:
         return self.num_classes
 
-    def get_hparams(self) -> dict[str, object]:
-        return dict(num_classes=self.num_classes, pretrained_url=self.pretrained_url)
-
     def forward(self, x: ERM_X) -> Classification_Y:
         f = self.backbone(x)
 

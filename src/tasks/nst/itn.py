@@ -58,15 +58,6 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         # cam
         self.w_softmax = torch.squeeze(list(self.network.squeeze_net.parameters())[-2])
 
-        self.save_hyperparameters(dict(
-            optimizer=self.optimizer,
-            scheduler=self.scheduler,
-            network=dict(
-                name=type(self.network).__name__,
-                hparams=self.network.get_hparams(),
-            ),
-        ))
-
     def _content_loss(self, feat_x: StyleTransfer_Y, feat_y: StyleTransfer_Y) -> torch.Tensor:
         return F.mse_loss(feat_x[2], feat_y[2])
 
