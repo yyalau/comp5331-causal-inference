@@ -27,23 +27,27 @@ class FATask(ClassificationTask[FA_X]):
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
         img_log_freq: int = 64,
+        img_log_max_examples_per_batch: int = 4,
     ) -> None:
         super().__init__(
             classifier=classifier,
             optimizer=optimizer,
             scheduler=scheduler,
             img_log_freq=img_log_freq,
+            img_log_max_examples_per_batch=img_log_max_examples_per_batch,
         )
 
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[FA_X], *, prefix: str) -> None:
-        eval_output_x_content = eval_output.x['content'].detach().cpu().float()
-        eval_output_x_styles = [style.detach().cpu().float() for style in eval_output.x['styles']]
-        eval_output_y = eval_output.y.detach().cpu().float()
-        eval_output_y_hat = eval_output.y_hat.detach().cpu().float()
-        batch_size, num_classes = eval_output_y_hat.shape
+        num_examples = min(eval_output.x['content'].shape[0], self.img_log_max_examples_per_batch)
+
+        eval_output_x_content = eval_output.x['content'].detach().cpu().float()[:num_examples]
+        eval_output_x_styles = [style.detach().cpu().float()[:num_examples] for style in eval_output.x['styles']]
+        eval_output_y = eval_output.y.detach().cpu().float()[:num_examples]
+        eval_output_y_hat = eval_output.y_hat.detach().cpu().float()[:num_examples]
+        num_classes = eval_output_y_hat.shape[1]
         num_styles = len(eval_output_x_styles)
 
-        nrows = batch_size
+        nrows = num_examples
         ncols = 2 + num_styles
         fig, axes = plt.subplots(
             nrows=nrows, ncols=ncols,

@@ -46,6 +46,8 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
     img_log_freq : int, default 64
         Controls how often the input style (`x_style`), input content (`x_content`) and output (`y_hat`) images are logged to TensorBoard.
         Specifically, they are logged every `img_log_freq` batches during model evaluation.
+    img_log_max_examples_per_batch : int, default 4
+        Controls the maximum number of examples that are logged per batch, regardless of the batch size.
     """
 
     def __init__(
@@ -56,6 +58,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         scheduler: Callable[[Optimizer], LRScheduler],
         gamma: float = 2.0,
         img_log_freq: int = 64,
+        img_log_max_examples_per_batch: int = 4,
     ) -> None:
         super().__init__(
             optimizer=optimizer,
@@ -73,6 +76,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         }
 
         self.img_log_freq = img_log_freq
+        self.img_log_max_examples_per_batch = img_log_max_examples_per_batch
 
     def _content_loss_fn(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return F.mse_loss(input_, target)
@@ -133,12 +137,12 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
             raise TypeError('Incorrect type of logger')
 
     def _log_images(self, writer: SummaryWriter, eval_output: AdaINEvalOutput, *, prefix: str) -> None:
-        eval_output_x_content = eval_output.x['content'].detach().cpu().float()
-        eval_output_x_style = eval_output.x['style'].detach().cpu().float()
-        eval_output_y_hat = eval_output.lazy_y_hat().detach().cpu().float()
-        batch_size = eval_output_y_hat.shape[0]
+        num_examples = min(eval_output.x['content'].shape[0], self.img_log_max_examples_per_batch)
 
-        nrows = batch_size
+        eval_output_x_content = eval_output.x['content'].detach().cpu().float()[:num_examples]
+        eval_output_x_style = eval_output.x['style'].detach().cpu().float()[:num_examples]
+        eval_output_y_hat = eval_output.lazy_y_hat().detach().cpu().float()[:num_examples]
+        nrows = num_examples
         ncols = 3
         fig, axes = plt.subplots(
             nrows=nrows, ncols=ncols,

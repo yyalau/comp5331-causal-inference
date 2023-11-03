@@ -46,6 +46,8 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
     img_log_freq : int, default 64
         Controls how often the input (`x`), ground truth (`y`) and output (`y_hat`) images are logged to TensorBoard.
         Specifically, they are logged every `img_log_freq` batches during model evaluation.
+    img_log_max_examples_per_batch : int, default 4
+        Controls the maximum number of examples that are logged per batch, regardless of the batch size.
     """
 
     def __init__(
@@ -55,6 +57,7 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         optimizer: Callable[[Iterable[torch.nn.Parameter]], Optimizer],
         scheduler: Callable[[Optimizer], LRScheduler],
         img_log_freq: int = 64,
+        img_log_max_examples_per_batch: int = 4,
     ) -> None:
         super().__init__(
             optimizer=optimizer,
@@ -83,6 +86,7 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         }
 
         self.img_log_freq = img_log_freq
+        self.img_log_max_examples_per_batch = img_log_max_examples_per_batch
 
     def _eval_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> ClassificationEvalOutput[X]:
         x, y = batch
