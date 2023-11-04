@@ -3,7 +3,7 @@ num_workers: 2
 dataset_config:
   dataset_path_root: "./data/digits_dg"
   dataset_name: "DIGITS"
-  num_classes : 64
+  num_classes : 10
   starts_from_zero : True
   train_val_domains: ['mnist', 'mnist_m', 'svhn']
   test_domains: ['mnist', 'mnist_m', 'syn']

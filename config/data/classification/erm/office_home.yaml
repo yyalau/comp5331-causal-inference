@@ -1,9 +1,9 @@
-batch_size: 32
-num_workers: 2
+batch_size: 16
+num_workers: 7
 dataset_config:
   dataset_path_root: "./data/OfficeHomeDataset_10072016"
   dataset_name: "OFFICE"
-  num_classes : 64
+  num_classes : 65
   starts_from_zero : True
   train_val_domains: ['Art', 'Clipart', 'Product']
   test_domains: ['Art', 'Clipart', 'Real World']
