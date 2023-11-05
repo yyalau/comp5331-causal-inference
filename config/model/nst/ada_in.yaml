@@ -9,7 +9,7 @@ network:
     decoder: 
       class_path: src.models.nst.AdaINDecoder
       init_args: 
-        pretrain: False
+        pretrain: True
     ckpt_path: experiments/nst/version_9/checkpoints/epoch=1-step=900-val_loss=0.211.ckpt
 optimizer:
   class_path: torch.optim.Adam
