@@ -264,7 +264,8 @@ class AdaINModel(nn.Module, StyleTransferModel):
         """
         Loads the weights for the model from a given path.
         """
-        if ckpt_path is None: return
+        if ckpt_path is None:
+            return
         if not os.path.exists(ckpt_path):
             raise ValueError(f'`ckpt_path` does not exist: {ckpt_path}')
 
