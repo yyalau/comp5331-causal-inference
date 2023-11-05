@@ -21,6 +21,6 @@ optimizer:
   init_args:
     lr: 1e-5
 scheduler:
-  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  class_path: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
   init_args:
-    T_max: 30
+    T_0: 30

@@ -10,6 +10,6 @@ optimizer:
     lr: 0.001
     weight_decay: 5e-4
 scheduler:
-  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  class_path: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
   init_args:
-    T_max: 50
+    T_0: 50
