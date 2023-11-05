@@ -6,12 +6,11 @@ network:
       class_path: src.models.nst.AdaINEncoder
       init_args: 
         pretrain: True
-        # wpath: "weights/vgg19/vgg_normalised.pth"
     decoder: 
       class_path: src.models.nst.AdaINDecoder
       init_args: 
-        # pretrain: True
-        wpath: "weights/decoder/decoder.pth"
+        pretrain: True
+    ckpt_path: experiments/nst/version_9/checkpoints/epoch=1-step=900-val_loss=0.211.ckpt
 optimizer:
   class_path: torch.optim.Adam
   init_args:
@@ -19,5 +18,5 @@ optimizer:
 scheduler:
   class_path: torch.optim.lr_scheduler.StepLR
   init_args:
-    step_size: 30
-    gamma: 0.00005
+    step_size: 100
+    gamma: 0.99

@@ -1,12 +1,14 @@
 from __future__ import annotations
+from ...dataops.utils import download_from_gdrive
 
 from typing import Protocol, TypeAlias, TypedDict, runtime_checkable
 
+import os
 import torch
 
 from ..base import NNModule
 
-__all__ = ['StyleTransfer_X', 'StyleTransfer_Y', 'StyleTransferModel']
+__all__ = ['StyleTransfer_X', 'StyleTransfer_Y', 'StyleTransferModel', 'PretrainedNNModule']
 
 
 class StyleTransfer_X(TypedDict):
@@ -36,3 +38,26 @@ class StyleTransferModel(NNModule[StyleTransfer_X, StyleTransfer_Y], Protocol):
     """
     Represents a style transfer model for images.
     """
+
+
+class PretrainedNNModule(NNModule[torch.Tensor, torch.Tensor], Protocol):
+    """
+    A partial interface for :class:`torch.nn.Module` that can be loaded from a pre-trained
+    """
+    
+    def __init__(self, *, default_url: str, default_wpath:str | None) -> None:
+        self.default_url = default_url
+        self.default_wpath = default_wpath
+        
+
+    def load_pretrain(self, *, pretrain: bool) -> None:
+        """
+        Loads the weights for the model from a given path.
+        """
+        if not pretrain: return
+        
+        if not os.path.exists(self.default_wpath):
+            os.makedirs(os.path.dirname(self.default_wpath), exist_ok=True)
+            download_from_gdrive(self.default_url, self.default_wpath)
+
+        self.net.load_state_dict(torch.load(self.default_wpath))
