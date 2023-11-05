@@ -7,10 +7,10 @@ classifier:
     nst:
       class_path: src.models.nst.ada_in.AdaINModel
       init_args:
-        pretrain: True
         alpha: 0.5
         encoder: src.models.nst.AdaINEncoder
         decoder: src.models.nst.AdaINDecoder
+        ckpt_path: experiments/nst/version_14/checkpoints/last.ckpt
     classifier:
       class_path: src.models.classification.erm.ResNet18
       init_args:
