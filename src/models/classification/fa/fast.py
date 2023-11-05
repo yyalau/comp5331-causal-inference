@@ -94,7 +94,7 @@ class FAST(nn.Module, FAModel):
         x = inputs.get('content')
         fx = self.classifier(self.normalization(x))
 
-        fx_tildes = [self.classifier(self.normalization(x_tilde)) for x_tilde in self.get_x_tilde(inputs)]
+        fx_tildes = [self.classifier(self.normalization(x_tilde)) for x_tilde in self.get_x_tildes(inputs)]
         fx_tildes_avg = torch.stack(fx_tildes, dim=0).mean(dim=0)
 
         weighted_output = fx * self.beta + (1 - self.beta) * fx_tildes_avg

@@ -112,7 +112,7 @@ class FAGT(nn.Module, FAModel):
         fx = self.classifier(self.normalization(x))
 
         fx_hats = [self.classifier(self.normalization(x_hat)) for x_hat in self.get_x_hats(inputs)]
-        fx_tildes = [self.classifier(self.normalization(x_tilde)) for x_tilde in self.get_x_tilde(inputs)]
+        fx_tildes = [self.classifier(self.normalization(x_tilde)) for x_tilde in self.get_x_tildes(inputs)]
         fx_hats_tildes_avg = torch.stack([*fx_hats, *fx_tildes], dim=0).mean(dim=0)
 
         weighted_output = fx * self.beta + (1 - self.beta) * fx_hats_tildes_avg
