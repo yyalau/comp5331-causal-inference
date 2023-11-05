@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-import os
 
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
@@ -60,7 +59,6 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         gamma: float = 2.0,
         img_log_freq: int = 64,
         img_log_max_examples_per_batch: int = 4,
-        ckpt_path: str | None = None,   
     ) -> None:
         super().__init__(
             optimizer=optimizer,
@@ -79,7 +77,6 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         self.img_log_freq = img_log_freq
         self.img_log_max_examples_per_batch = img_log_max_examples_per_batch
-        self.load_ckpt(ckpt_path=ckpt_path)
         
     def _content_loss_fn(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return F.mse_loss(input_, target)
@@ -199,14 +196,3 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')
     
-    def load_ckpt(self, ckpt_path: str) -> None:
-        """
-        Loads the weights for the model from a given path.
-        """
-        if ckpt_path is None: return
-        if not os.path.exists(ckpt_path):
-            raise ValueError(f'`ckpt_path` does not exist: {ckpt_path}')
-        
-        state_dict = {k.replace('network.', ''): v for k, v in torch.load(ckpt_path)['state_dict'].items()}
-        self.network.load_state_dict(state_dict)
-        

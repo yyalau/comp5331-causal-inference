@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 import torch
 import torch.nn as nn
@@ -223,6 +224,7 @@ class AdaINModel(nn.Module, StyleTransferModel):
         decoder: AdaINDecoder,
         *,
         alpha: float = 1.0,
+        ckpt_path: str | None = None,
     ) -> None:
         super().__init__()
 
@@ -230,6 +232,7 @@ class AdaINModel(nn.Module, StyleTransferModel):
         self._decoder = decoder
 
         self._alpha = alpha
+        self.load_ckpt(ckpt_path)
 
     @property
     def encoder(self) -> AdaINEncoder:
@@ -258,3 +261,21 @@ class AdaINModel(nn.Module, StyleTransferModel):
         enc_applied = alpha * self.ada_in(enc_content, enc_style) + (1 - alpha) * enc_content
         return self.decoder(enc_applied)
     
+    def load_ckpt(self, ckpt_path: str) -> None:
+        """
+        Loads the weights for the model from a given path.
+        """
+        if ckpt_path is None: return
+        if not os.path.exists(ckpt_path):
+            raise ValueError(f'`ckpt_path` does not exist: {ckpt_path}')
+        
+        state_dict = torch.load(ckpt_path)['state_dict']
+        # state_dict = {k.replace('network.', ''): v for k, v in state_dict.items()}
+        
+        self._encoder.load_state_dict({
+            k.replace('network._encoder.', ''): v for k, v in state_dict.items() if k.startswith('network._encoder')
+        })
+        self._decoder.load_state_dict({
+            k.replace('network._decoder.', ''): v for k, v in state_dict.items() if k.startswith('network._decoder')
+        })
+        
