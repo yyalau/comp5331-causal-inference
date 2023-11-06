@@ -80,7 +80,6 @@ class BaseTask(pl.LightningModule, Generic[Eval_X, Eval_Out, Infer_X, Infer_Y], 
         with config_path.open() as f:
             config = yaml.load(f, yaml.SafeLoader)
             if config is not None:
-                print(config)
                 logger.log_hyperparams(config)
 
     def on_train_start(self) -> None:
