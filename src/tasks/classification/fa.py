@@ -89,7 +89,7 @@ class FATask(ClassificationTask[FA_X]):
                         ax.set_title('Applied Image (NST)')
                     elif 1 + num_styles + num_nst_applied <= col < 1 + num_styles + num_nst_applied + num_fst_applied:
                         ax.set_title('Applied Image (FST)')
-                    elif col == num_styles + num_nst_applied <= col < 1 + num_styles + num_nst_applied + num_fst_applied:
+                    elif col == 1 + num_styles + num_nst_applied + num_fst_applied:
                         ax.set_title('Class Probabilities')
 
                 if col == 0:
@@ -103,7 +103,7 @@ class FATask(ClassificationTask[FA_X]):
                 elif 1 + num_styles + num_nst_applied <= col < 1 + num_styles + num_nst_applied + num_fst_applied:
                     style_idx = col - 1 - num_styles - num_nst_applied
                     ax.imshow(example_x_fsts[style_idx])
-                elif col == num_styles + num_nst_applied <= col < 1 + num_styles + num_nst_applied + num_fst_applied:
+                elif col == 1 + num_styles + num_nst_applied + num_fst_applied:
                     ax.imshow(example_class_prob, aspect='auto')
 
                     for c_idx in list(range(num_classes)):
