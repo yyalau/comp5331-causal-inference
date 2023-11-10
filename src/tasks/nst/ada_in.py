@@ -180,7 +180,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)
 
-        fig.clear()
+        plt.close()
 
     def training_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
         eval_output = self._eval_step(batch, batch_idx)

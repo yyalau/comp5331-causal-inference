@@ -90,4 +90,4 @@ class ERMTask(ClassificationTask[ERM_X]):
 
         writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)
 
-        fig.clear()
+        plt.close()
