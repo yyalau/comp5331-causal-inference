@@ -23,7 +23,6 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
     
     def __init__(self, *, pretrain: bool = False, freeze: bool = False):
 
-    def __init__(self, *, pretrain: bool = False):
         super().__init__()
 
         self.default_wpath: str = "weights/vgg19/vgg_normalised.pth"
