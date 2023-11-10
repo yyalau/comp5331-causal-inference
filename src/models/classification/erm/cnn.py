@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from typing import Any
 from pathlib import Path
 
 from .base import ERMModel, ERM_X, Classification_Y
@@ -78,10 +79,20 @@ class SmallConvNet(nn.Module, ERMModel):
         self.classifier = nn.Linear(in_features=self.backbone.out_features, out_features=num_classes)
 
         if pretrained_path is not None:
-            if pretrained_path.exists() and pretrained_path.is_file():
-                self.load_state_dict(torch.load(pretrained_path))
-            else:
-                raise ValueError(f'provided path {pretrained_path} does not exist to load the pretrained params.')
+            self.load_weights(pretrained_path)
+
+    def load_weights(self, pretrained_path: Path) -> None:
+        if pretrained_path.exists() and pretrained_path.is_file():
+            state_dict: dict[str, Any] = torch.load(pretrained_path)['state_dict']
+
+            self.backbone.load_state_dict({
+                k.replace('classifier.backbone.', ''): v for k, v in state_dict.items() if k.startswith('classifier.backbone.')
+            })
+            self.classifier.load_state_dict({
+                k.replace('classifier.classifier.', ''): v for k, v in state_dict.items() if k.startswith('classifier.classifier.')
+            })
+        else:
+            raise ValueError(f'provided path {pretrained_path} does not exist to load the pretrained params.')
 
     @property
     def num_classes(self) -> int:

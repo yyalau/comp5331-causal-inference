@@ -74,9 +74,9 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         # unless they are directly set as an attribute of the LightningModule
         # (as opposed to placing them inside a container like a dictionary)
         self._accuracy = Accuracy(task='multiclass', num_classes=num_classes)
-        self._precision = Precision(task='multiclass', num_classes=num_classes)
-        self._recall = Recall(task='multiclass', num_classes=num_classes)
-        self._f1 = F1Score(task='multiclass', num_classes=num_classes)
+        self._precision = Precision(task='multiclass', num_classes=num_classes, average='macro')
+        self._recall = Recall(task='multiclass', num_classes=num_classes, average='macro')
+        self._f1 = F1Score(task='multiclass', num_classes=num_classes, average='macro')
 
         self.metrics = {
             'acc': self._accuracy,
