@@ -7,10 +7,15 @@ classifier:
     nst:
       class_path: src.models.nst.ada_in.AdaINModel
       init_args:
-        pretrain: True
         alpha: 0.35
-        encoder: src.models.nst.AdaINEncoder
-        decoder: src.models.nst.AdaINDecoder
+        encoder: 
+          class_path: src.models.nst.AdaINEncoder
+          init_args:
+            pretrain: True
+        decoder: 
+          class_path: src.models.nst.AdaINDecoder
+          init_args:
+            pretrain: True
     classifier:
       class_path: src.models.classification.erm.ResNet18
       init_args:

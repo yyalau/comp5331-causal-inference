@@ -9,12 +9,12 @@ classifier:
       class_path: src.models.classification.erm.ViT
       init_args:
         image_size: 224
-        patch_size: 16
+        patch_size: 32
         num_classes: 65
-        dim: 128
-        depth: 2
-        heads: 1
-        mlp_dim: 64
+        dim: 768
+        depth: 12
+        heads: 12
+        mlp_dim: 3072
         pool: 'cls' # ['cls', 'mean'] 
         channels: 3
         dim_head: 64 
@@ -23,8 +23,8 @@ classifier:
 optimizer:
   class_path: torch.optim.Adam
   init_args:
-    lr: 1e-5
+    lr: 1e-3
 scheduler:
-  class_path: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-  init_args:
-    T_max: 30
+  class_path: torch.optim.lr_scheduler.LinearLR
+  # init_args:
+  #   T_max: 30
