@@ -1,16 +1,16 @@
 network: 
   class_path: src.models.nst.ada_in.AdaINModel
   init_args:
-    alpha: 0.8
+    alpha: 0.5
     encoder:
       class_path: src.models.nst.AdaINEncoder
       init_args: 
         pretrain: True
+        freeze: True
     decoder: 
       class_path: src.models.nst.AdaINDecoder
       init_args: 
         pretrain: True
-    ckpt_path: experiments/nst/version_14/checkpoints/last.ckpt
 optimizer:
   class_path: torch.optim.Adam
   init_args:
@@ -18,5 +18,5 @@ optimizer:
 scheduler:
   class_path: torch.optim.lr_scheduler.StepLR
   init_args:
-    step_size: 100
+    step_size: 10
     gamma: 0.99

@@ -66,7 +66,6 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         )
 
         self.network = network
-
         self.gamma = gamma
 
         self.loss = self._combined_loss
