@@ -83,20 +83,21 @@ class FAST(nn.Module, FAModel):
     def get_num_classes(self) -> int:
         return self.classifier.get_num_classes()
 
-    def forward(self, input: FA_X) -> Classification_Y:
-        content = input.get('content')
-        styles = input.get('styles')
+    def get_x_tildes(self, inputs: FA_X) -> list[torch.Tensor]:
+        content = inputs.get('content')
+        styles = inputs.get('styles')
 
-        fx_tildes = []
-        for x_prime in styles:
-            x_tilde = self.nst({'style': x_prime, 'content': content})
-            fx_tilde = self.classifier(self.normalization(x_tilde))
-            fx_tildes.append(fx_tilde)
+        # TODO: may need to downsize
+        return [self.nst({'style': x_prime, 'content': content}) for x_prime in styles]
+
+    def forward(self, inputs: FA_X) -> Classification_Y:
+        x = inputs.get('content')
+        fx = self.classifier(self.normalization(x))
+
+        fx_tildes = [self.classifier(self.normalization(x_tilde)) for x_tilde in self.get_x_tildes(inputs)]
         fx_tildes_avg = torch.stack(fx_tildes, dim=0).mean(dim=0)
 
-        fx = self.classifier(self.normalization(content))
         weighted_output = fx * self.beta + (1 - self.beta) * fx_tildes_avg
-
         predictions: Classification_Y = weighted_output
 
         return predictions

@@ -1,10 +1,12 @@
 from __future__ import annotations
-from ...dataops.utils import download_from_gdrive
 
 from typing import Protocol, TypeAlias, TypedDict, runtime_checkable
 
 import os
 import torch
+import torch.nn as nn
+
+from ...dataops.utils import download_from_gdrive
 
 from ..base import NNModule
 
@@ -44,18 +46,17 @@ class PretrainedNNModule(NNModule[torch.Tensor, torch.Tensor], Protocol):
     """
     A partial interface for :class:`torch.nn.Module` that can be loaded from a pre-trained
     """
-    
-    def __init__(self, *, default_url: str, default_wpath:str | None) -> None:
-        self.default_url = default_url
-        self.default_wpath = default_wpath
-        
+    default_url: str
+    default_wpath: str
+    net: nn.Sequential
 
     def load_pretrain(self, *, pretrain: bool, net: nn.Module) -> None:
         """
         Loads the weights for the model from a given path.
         """
-        if not pretrain: return
-        
+        if not pretrain:
+            return
+
         if not os.path.exists(self.default_wpath):
             os.makedirs(os.path.dirname(self.default_wpath), exist_ok=True)
             download_from_gdrive(self.default_url, self.default_wpath)

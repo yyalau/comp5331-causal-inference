@@ -76,7 +76,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         self.img_log_freq = img_log_freq
         self.img_log_max_examples_per_batch = img_log_max_examples_per_batch
-        
+
     def _content_loss_fn(self, input_: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         return F.mse_loss(input_, target)
 
@@ -194,4 +194,4 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')
-    
+

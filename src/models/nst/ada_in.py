@@ -4,7 +4,6 @@ import os
 import torch
 import torch.nn as nn
 
-
 from ..base import NNModule
 
 from .base import StyleTransfer_X, StyleTransfer_Y, StyleTransferModel, PretrainedNNModule
@@ -24,6 +23,7 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
     
     def __init__(self, *, pretrain: bool = False, freeze: bool = False):
 
+    def __init__(self, *, pretrain: bool = False):
         super().__init__()
 
         self.default_wpath: str = "weights/vgg19/vgg_normalised.pth"
@@ -243,6 +243,7 @@ class AdaINModel(nn.Module, StyleTransferModel):
         self._decoder = decoder
 
         self._alpha = alpha
+
         self.load_ckpt(ckpt_path)
 
     @property
@@ -271,15 +272,16 @@ class AdaINModel(nn.Module, StyleTransferModel):
 
         enc_applied = alpha * self.ada_in(enc_content, enc_style) + (1 - alpha) * enc_content
         return self.decoder(enc_applied)
-    
-    def load_ckpt(self, ckpt_path: str) -> None:
+
+    def load_ckpt(self, ckpt_path: str | None) -> None:
         """
         Loads the weights for the model from a given path.
         """
-        if ckpt_path is None: return
+        if ckpt_path is None:
+            return
         if not os.path.exists(ckpt_path):
             raise ValueError(f'`ckpt_path` does not exist: {ckpt_path}')
-        
+
         state_dict = torch.load(ckpt_path)['state_dict']
         # state_dict = {k.replace('network.', ''): v for k, v in state_dict.items()}
         
@@ -292,4 +294,3 @@ class AdaINModel(nn.Module, StyleTransferModel):
         self._decoder.load_state_dict({
             k.replace('network._decoder.', ''): v for k, v in state_dict.items() if k.startswith('network._decoder')
         })
-        

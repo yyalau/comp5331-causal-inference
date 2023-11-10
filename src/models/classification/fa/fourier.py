@@ -27,8 +27,7 @@ class FourierMix(nn.Module):
     def forward(self, x: torch.Tensor, x_prime: torch.Tensor):
         # Input image shape: (batch_size, num_channels, height, width)
         if x.shape != x_prime.shape:
-            print(f'WARNING: Shapes are not equal. Found: {x.shape} vs. {x_prime.shape}')
-            return x
+            raise ValueError(f'Found shape mismatch: {x.shape} vs. {x_prime.shape}')
 
         x_fft = fft.fft2(x, dim=(-2, -1))
         x_prime_fft = fft.fft2(x_prime, dim=(-2, -1))
