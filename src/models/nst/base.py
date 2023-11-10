@@ -50,7 +50,7 @@ class PretrainedNNModule(NNModule[torch.Tensor, torch.Tensor], Protocol):
     default_wpath: str
     net: nn.Sequential
 
-    def load_pretrain(self, *, pretrain: bool) -> None:
+    def load_pretrain(self, *, pretrain: bool, net: nn.Module) -> None:
         """
         Loads the weights for the model from a given path.
         """
@@ -61,4 +61,4 @@ class PretrainedNNModule(NNModule[torch.Tensor, torch.Tensor], Protocol):
             os.makedirs(os.path.dirname(self.default_wpath), exist_ok=True)
             download_from_gdrive(self.default_url, self.default_wpath)
 
-        self.net.load_state_dict(torch.load(self.default_wpath))
+        net.load_state_dict(torch.load(self.default_wpath))

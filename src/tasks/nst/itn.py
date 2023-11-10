@@ -58,11 +58,13 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         # cam
         self.w_softmax = torch.squeeze(list(self.network.squeeze_net.parameters())[-2])
 
-    def _content_loss(self, feat_x: StyleTransfer_Y, feat_y: StyleTransfer_Y) -> torch.Tensor:
+    def _content_loss_fn(self, feat_x: StyleTransfer_Y, feat_y: StyleTransfer_Y) -> torch.Tensor:
         return F.mse_loss(feat_x[2], feat_y[2])
 
+    def _content_loss(self, features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc):
+        return self._content_loss_fn(features_xc, features_yc)
 
-    def _style_loss(self, feat_xc, feat_xs: StyleTransfer_Y) -> torch.Tensor:
+    def _style_loss_fn(self, feat_xc, feat_xs: StyleTransfer_Y) -> torch.Tensor:
 
         def gram_matrix(y):
             (b, ch, h, w) = y.size()
@@ -77,10 +79,16 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
 
         return style_loss
 
-    def _category_loss(self, y_hat: StyleTransfer_Y, y: StyleTransfer_Y) -> torch.Tensor:
+    def _style_loss(self, features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc):
+        return self._style_loss_fn(features_yc, features_xs)
+
+    def _category_loss_fn(self, y_hat: StyleTransfer_Y, y: StyleTransfer_Y) -> torch.Tensor:
         return F.cross_entropy(y_hat, y)
 
-    def _cam_loss(self, label_id_x: StyleTransfer_Y, label_id_y: StyleTransfer_Y) -> torch.Tensor:
+    def _category_loss(self, features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc):
+        return self._category_loss_fn(logit_yc, label_id_xc)
+
+    def _cam_loss_fn(self, label_id_x: StyleTransfer_Y, label_id_y: StyleTransfer_Y) -> torch.Tensor:
 
         def get_cam(feature_conv, class_idx):
             b, nc, h, w = feature_conv.shape #8, 512, 1, 1
@@ -93,12 +101,17 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         y_cam = get_cam(self.network.features_blobs[1], label_id_y)
 
         return F.mse_loss(x_cam, y_cam)
+    
+    def _cam_loss(self, features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc):
+        return self._cam_loss_fn(label_id_xc, label_id_yc)
+    
 
     def _combined_loss(self, features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc) -> torch.Tensor:
-        content_loss = self._content_loss(features_xc, features_yc)
-        style_loss = self._style_loss(features_yc, features_xs)
-        cam_loss = self._cam_loss(label_id_xc, label_id_yc)
-        category_loss = self._category_loss(logit_yc, label_id_xc)
+        content_loss = self._content_loss(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
+        style_loss = self._style_loss(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
+        cam_loss = self._cam_loss(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
+        category_loss = self._category_loss(features_xc, features_yc, features_xs, label_id_xc, label_id_yc, logit_yc)
+        
 
         return 10000*category_loss + 80* cam_loss + self.w_style * style_loss + self.w_content * content_loss
 

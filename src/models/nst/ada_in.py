@@ -20,8 +20,9 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
     wpath : str, optional
         If given, loads the weights of the encoder from the provided path.
     """
+    
+    def __init__(self, *, pretrain: bool = False, freeze: bool = False):
 
-    def __init__(self, *, pretrain: bool = False):
         super().__init__()
 
         self.default_wpath: str = "weights/vgg19/vgg_normalised.pth"
@@ -29,65 +30,77 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
 
         self._pretrain = pretrain
 
-        self.net = nn.Sequential(
+        vgg = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=3, kernel_size=1),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3),
             nn.ReLU(inplace=True),  # First layer from which Style Loss is calculated
             nn.ReflectionPad2d(padding=1),
+            
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3),
             nn.ReLU(inplace=True),  # Second layer from which Style Loss is calculated
+            
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),  # Third layer from which Style Loss is calculated
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+            
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
+            
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
+            
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),  # This is Relu 4.1 The output layer of the encoder.
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
+            
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
+            
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
+            
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
+
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
         )
+        
+        self.load_pretrain(pretrain=pretrain, net = vgg)
+        self.net = vgg[:31]
 
-
-        self.load_pretrain(pretrain=pretrain)
-
+        if freeze:
+            for param in self.parameters(): param.requires_grad = False
+                
     @property
     def pretrain(self) -> bool:
         return self._pretrain
@@ -101,7 +114,6 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
         states = []
         for i, layer in enumerate(self.net):
             batch = layer(batch)
-
             if i in [3, 10, 17, 30]:
                 states.append(batch)
 
@@ -188,7 +200,7 @@ class AdaINDecoder(nn.Module, PretrainedNNModule):
             self.conv1_2,
         )
 
-        self.load_pretrain(pretrain=pretrain)
+        self.load_pretrain(pretrain=pretrain, net = self.net)
 
     @property
     def pretrain(self) -> bool:
@@ -271,7 +283,10 @@ class AdaINModel(nn.Module, StyleTransferModel):
 
         state_dict = torch.load(ckpt_path)['state_dict']
         # state_dict = {k.replace('network.', ''): v for k, v in state_dict.items()}
-
+        
+        if (self._encoder.pretrain or self._decoder.pretrain ) and  ckpt_path is not None:
+            raise ValueError('Cannot load pre-trained weights and checkpoint weights at the same time.')
+        
         self._encoder.load_state_dict({
             k.replace('network._encoder.', ''): v for k, v in state_dict.items() if k.startswith('network._encoder')
         })

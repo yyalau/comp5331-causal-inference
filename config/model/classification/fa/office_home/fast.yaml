@@ -7,10 +7,15 @@ classifier:
     nst:
       class_path: src.models.nst.ada_in.AdaINModel
       init_args:
-        alpha: 0.5
-        encoder: src.models.nst.AdaINEncoder
-        decoder: src.models.nst.AdaINDecoder
-        ckpt_path: experiments/nst/version_14/checkpoints/last.ckpt
+        alpha: 0.35
+        encoder: 
+          class_path: src.models.nst.AdaINEncoder
+          init_args:
+            pretrain: True
+        decoder: 
+          class_path: src.models.nst.AdaINDecoder
+          init_args:
+            pretrain: True
     classifier:
       class_path: src.models.classification.erm.ResNet18
       init_args:
@@ -19,7 +24,9 @@ classifier:
 optimizer:
   class_path: torch.optim.SGD
   init_args:
-    lr: 1e-5
+    momentum: 0.9
+    lr: 0.001
+    weight_decay: 5e-4
 scheduler:
   class_path: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
   init_args:
