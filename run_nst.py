@@ -16,6 +16,7 @@ def cli():
         model_class=AdaINTask,
         datamodule_class=AdaINDataModule,
         trainer_defaults={
+            'use_distributed_sampler': False,
             'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='nst'),
             'callbacks': [
                 LearningRateMonitor(),

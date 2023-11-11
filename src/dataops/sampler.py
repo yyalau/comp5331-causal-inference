@@ -27,7 +27,7 @@ class DomainBatchSampler(DistributedSampler[List[int]]):
         self.seed = seed
         self.batch_size = batch_size
         self.drop_last = drop_last
-        self.image_dataset: ImageDataset
+        self.image_dataset = image_dataset
 
     def set_dataset(self, image_dataset: ImageDataset) -> None:
         self.image_dataset = image_dataset
