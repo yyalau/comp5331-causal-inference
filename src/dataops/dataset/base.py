@@ -81,7 +81,8 @@ class DatasetConfig:
     dataset_name: SupportedDatasets
     num_classes: int
     starts_from_zero: bool
-    train_val_domains: List[str]
+    train_domains: List[str]
+    val_domains: List[str]
     test_domains: List[str]
     lazy: bool
     preprocess_params: PreprocessParams
@@ -131,8 +132,9 @@ class ImageDataset(Dataset[DatasetOutput]):
 
     def _validate_config_params(self, config: DatasetConfig):
         self.validate_dataset_name()
-        self.validate_domains(config.train_val_domains)
+        self.validate_domains(config.train_domains)
         self.validate_domains(config.test_domains)
+        self.validate_domains(config.val_domains)
 
     def __init__(self, config: DatasetConfig, partition: DatasetPartition) -> None:
         super().__init__()
@@ -149,11 +151,13 @@ class ImageDataset(Dataset[DatasetOutput]):
             self.download(parent_root)
             config.dataset_path_root = Path(f"{parent_root}/{self.dataset_name}")
 
-        self.domains = (
-            config.test_domains
-            if partition is DatasetPartition.TEST
-            else config.train_val_domains
-        )
+        if partition is DatasetPartition.TEST:
+            self.domains = config.test_domains
+        elif partition is DatasetPartition.VALIDATE:
+            self.domains = config.val_domains
+        elif partition is DatasetPartition.TRAIN:
+            self.domains = config.train_domains
+
         self.domain_data_map = self._fetch_data()
 
         self.len = sum(
@@ -180,7 +184,6 @@ class ImageDataset(Dataset[DatasetOutput]):
             image_reader.load()
             for image_reader in samples
         ])
-
 
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]

@@ -6,7 +6,8 @@ dataset_config:
   num_classes : 7
   starts_from_zero : False
   train_val_domains: ['art_painting', 'cartoon', 'photo']
-  test_domains: ['cartoon', 'photo','sketch']
+  val_domains: ['sketch']
+  test_domains: ['sketch']
   lazy: False
   preprocess_params:
     image_resize_params:

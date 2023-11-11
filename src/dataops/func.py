@@ -28,6 +28,21 @@ def get_flattened_index(
     raise StopIteration("Index out of bound")
 
 
+def get_flattend_indices_from_key(
+    dictionary: Mapping[Any, List[Any]],
+    key: str,
+    indicies: List[int]
+) -> List[int]:
+    total_length = 0
+    for k, v in dictionary.items():
+        if key == k:
+            return [idx + total_length for idx in indicies]
+        total_length += len(v)
+
+    raise StopIteration("Index out of bound")
+
+
+
 def sample_sequence_delete(
     sequence: List[V]
 ) -> V:
