@@ -5,8 +5,9 @@ dataset_config:
   dataset_name: "OFFICE"
   num_classes : 65
   starts_from_zero : True
-  train_val_domains: ['Art', 'Clipart', 'Product']
-  test_domains: ['Art', 'Clipart', 'Real World']
+  train_domains: ['Art', 'Clipart', 'Product']
+  val_domains: ['Real World']
+  test_domains: ['Real World']
   lazy: False
   preprocess_params:
     image_resize_params:

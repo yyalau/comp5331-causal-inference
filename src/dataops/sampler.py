@@ -12,9 +12,10 @@ __all__ = [
 
 class DomainBatchSampler(BatchSampler):
 
-    def __init__(self, image_dataset: ImageDataset, batch_size: int) -> None:
+    def __init__(self, image_dataset: ImageDataset, batch_size: int, drop_last: bool = False) -> None:
         self.image_dataset = image_dataset
         self.batch_size = batch_size
+        self.drop_last = drop_last
 
     def get_domain_indices(self, image_dataset: ImageDataset) -> Mapping[str, List[int]]:
         domain_data_map = image_dataset.domain_data_map

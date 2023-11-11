@@ -1,11 +1,11 @@
 batch_size: 32
-num_workers: 2
+num_workers: 7
 dataset_config:
   dataset_path_root: "./data/pacs"
   dataset_name: "PACS"
   num_classes : 7
   starts_from_zero : False
-  train_val_domains: ['art_painting', 'cartoon', 'photo']
+  train_domains: ['art_painting', 'cartoon', 'photo']
   val_domains: ['sketch']
   test_domains: ['sketch']
   lazy: False

@@ -65,10 +65,12 @@ class DatasetConfig:
         Number of classes included in the datastets.
     starts_from_zero : bool
         Specifies wether the class labels start from zero or not.
-    train_val_domains : List[str]
-        The domains to use for training and validation.
-    test_domains: List[str]
-        The domains to use for testing
+    train_domains : List[str]
+        The domains to use for training.
+    val_domains : List[str]
+        The domains to use for validation.
+    test_domains : List[str]
+        The domains to use for testing.
     lazy : bool
         Lazy initialization of the images.
     preprocess_params : PreprocessParams
