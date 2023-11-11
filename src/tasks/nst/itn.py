@@ -139,7 +139,7 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
 
 
         xc, xs = batch['content'], batch['style']
-        yc = self.network.transfer_model(xc) # 8, 3, 32,32
+        yc = self.network.transfer_net(xc) # 8, 3, 32,32
 
         logit_xc, logit_yc = map(self.network.squeeze_net, (xc, yc)) # 8, 1000
         label_id_xc, label_id_yc = map(get_rank, (logit_xc, logit_yc))
@@ -162,7 +162,7 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         return self.network(x)
 
 
-    def _process_images(self, eval_output: AdaINEvalOutput, *, prefix: str, batch_idx: int) -> None:
+    def _process_images(self, eval_output: ItnEvalOutput, *, prefix: str, batch_idx: int) -> None:
         if batch_idx % self.img_log_freq:
             return
 
@@ -171,7 +171,7 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         else:
             raise TypeError('Incorrect type of logger')
 
-    def _log_images(self, writer: SummaryWriter, eval_output: AdaINEvalOutput, *, prefix: str) -> None:
+    def _log_images(self, writer: SummaryWriter, eval_output: ItnEvalOutput, *, prefix: str) -> None:
         eval_output_x_content = eval_output.x['content'].detach().cpu().float()
         eval_output_x_style = eval_output.x['style'].detach().cpu().float()
         eval_output_y_hat = eval_output.lazy_y_hat().detach().cpu().float()
@@ -215,6 +215,7 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
         fig.tight_layout()
 
         writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)
+        plt.close(fig)
 
     def training_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
         eval_output = self._eval_step(batch, batch_idx)
