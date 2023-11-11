@@ -54,19 +54,17 @@ class BaseDataModule(pl.LightningDataModule):
         if stage == 'fit':
             self.train_ds = dataset_cls(self.ds_config, partition=DatasetPartition.TRAIN)
             self.val_ds = dataset_cls(self.ds_config, partition=DatasetPartition.VALIDATE)
-            self.train_batch_sampler = DomainBatchSampler(image_dataset=self.train_ds, batch_size=self.batch_size)
-            self.val_batch_sampler = DomainBatchSampler(image_dataset=self.val_ds, batch_size=self.batch_size)
-
+            self.train_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False, image_dataset=self.train_ds)
+            self.val_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False, image_dataset=self.val_ds)
         elif stage == 'test':
             if ds_name is SupportedDatasets.DIGITS:
                 self.test_ds = dataset_cls(self.ds_config, partition=DatasetPartition.VALIDATE)
             else:
                 self.test_ds = dataset_cls(self.ds_config, partition=DatasetPartition.TEST)
-            self.test_batch_sampler = DomainBatchSampler(image_dataset=self.test_ds, batch_size=self.batch_size)
+            self.test_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False, image_dataset=self.test_ds)
         else:
             self.full_ds = dataset_cls(self.ds_config, partition=DatasetPartition.ALL)
-            self.full_batch_sampler = DomainBatchSampler(image_dataset=self.full_ds, batch_size=self.batch_size)
-
+            self.full_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False, image_dataset=self.full_ds)
 
     @abstractmethod
     def train_dataloader(self) -> DataLoader[DatasetOutput]:

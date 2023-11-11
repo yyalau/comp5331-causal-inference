@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from torch.utils.data.sampler import BatchSampler
+from torch.utils.data.sampler import BatchSampler, Sampler
 from .dataset.base import ImageDataset
-from typing import Iterator, List, Mapping
+from typing import Iterator, List, Mapping, Union, Iterable
 from random import shuffle
 from .func import get_flattend_indices_from_key
 
@@ -12,10 +12,12 @@ __all__ = [
 
 class DomainBatchSampler(BatchSampler):
 
-    def __init__(self, image_dataset: ImageDataset, batch_size: int, drop_last: bool = False) -> None:
-        self.image_dataset = image_dataset
+    def __init__(self, sampler: Union[Sampler[int], Iterable[int]], batch_size: int, drop_last: bool, image_dataset: ImageDataset) -> None:
+        self.sampler = sampler
         self.batch_size = batch_size
         self.drop_last = drop_last
+        self.image_dataset = image_dataset
+
 
     def get_domain_indices(self, image_dataset: ImageDataset) -> Mapping[str, List[int]]:
         domain_data_map = image_dataset.domain_data_map
@@ -25,7 +27,6 @@ class DomainBatchSampler(BatchSampler):
             shuffle(indices)
             res[domain] = indices
         return res
-
 
     def __iter__(self) -> Iterator[List[int]]:
         batch_size = self.batch_size
