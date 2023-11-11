@@ -1,19 +1,30 @@
 from __future__ import annotations
 
-from torch.utils.data.sampler import BatchSampler, Sampler
+from torch.utils.data import DistributedSampler
 from .dataset.base import ImageDataset
-from typing import Iterator, List, Mapping, Union, Iterable
-from random import shuffle
+from typing import Iterator, List, Mapping, Optional
 from .func import get_flattend_indices_from_key
+import torch
 
 __all__ = [
     "DomainBatchSampler"
 ]
 
-class DomainBatchSampler(BatchSampler):
+class DomainBatchSampler(DistributedSampler[List[int]]):
 
-    def __init__(self, sampler: Union[Sampler[int], Iterable[int]], batch_size: int, drop_last: bool) -> None:
-        self.sampler = sampler
+    def __init__(
+        self,
+        image_dataset: ImageDataset,
+        num_replicas: Optional[int] = None,
+        rank: Optional[int] = None,
+        shuffle: bool = True,
+        seed: int = 0,
+        drop_last: bool = False,
+        batch_size: int = 1
+    ) -> None:
+        super().__init__(dataset=image_dataset, num_replicas=num_replicas, rank=rank, shuffle=shuffle, seed=seed, drop_last=drop_last)
+        self.shuffle = shuffle
+        self.seed = seed
         self.batch_size = batch_size
         self.drop_last = drop_last
         self.image_dataset: ImageDataset
@@ -26,7 +37,9 @@ class DomainBatchSampler(BatchSampler):
         res = dict()
         for domain, value in domain_data_map.items():
             indices = list(range(len(value)))
-            shuffle(indices)
+            g = torch.Generator()
+            g.manual_seed(self.seed + self.epoch)
+            indices = torch.randperm(len(indices), generator=g).tolist()  
             res[domain] = indices
         return res
 

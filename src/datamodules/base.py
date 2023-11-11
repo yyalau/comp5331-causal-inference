@@ -41,6 +41,9 @@ class BaseDataModule(pl.LightningDataModule):
         self.full_batch_sampler: DomainBatchSampler
 
     def setup(self, stage: str):
+        if self.trainer is None:
+            raise ValueError('Trainer {self.trainer} is not valid')
+
         ds_name = self.ds_config.dataset_name
         if ds_name == SupportedDatasets.PACS:
             dataset_cls = PACSDataset
@@ -54,21 +57,17 @@ class BaseDataModule(pl.LightningDataModule):
         if stage == 'fit':
             self.train_ds = dataset_cls(self.ds_config, partition=DatasetPartition.TRAIN)
             self.val_ds = dataset_cls(self.ds_config, partition=DatasetPartition.VALIDATE)
-            self.train_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False)
-            self.train_batch_sampler.set_dataset(self.train_ds)
-            self.val_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False)
-            self.val_batch_sampler.set_dataset(self.val_ds)
+            self.train_batch_sampler = DomainBatchSampler(self.train_ds, batch_size=self.batch_size, num_replicas=self.trainer.num_devices, rank=self.trainer.global_rank)
+            self.val_batch_sampler = DomainBatchSampler(self.val_ds, batch_size=self.batch_size, num_replicas=self.trainer.num_devices, rank=self.trainer.global_rank)
         elif stage == 'test':
             if ds_name is SupportedDatasets.DIGITS:
                 self.test_ds = dataset_cls(self.ds_config, partition=DatasetPartition.VALIDATE)
             else:
                 self.test_ds = dataset_cls(self.ds_config, partition=DatasetPartition.TEST)
-            self.test_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False)
-            self.test_batch_sampler.set_dataset(self.test_ds)
+            self.test_batch_sampler = DomainBatchSampler(self.test_ds, batch_size=self.batch_size, num_replicas=self.trainer.num_devices, rank=self.trainer.global_rank)
         else:
             self.full_ds = dataset_cls(self.ds_config, partition=DatasetPartition.ALL)
-            self.full_batch_sampler = DomainBatchSampler(sampler=None, batch_size=self.batch_size, drop_last=False)
-            self.full_batch_sampler.set_dataset(self.full_ds)
+            self.full_batch_sampler = DomainBatchSampler(self.full_ds, batch_size=self.batch_size, num_replicas=self.trainer.num_devices, rank=self.trainer.global_rank)
 
     @abstractmethod
     def train_dataloader(self) -> DataLoader[DatasetOutput]:
