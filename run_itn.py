@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.loggers import TensorBoardLogger
 
 from src.datamodules.nst import AdaINDataModule
 from src.tasks.nst import ItnTask
@@ -14,13 +16,16 @@ def cli():
         model_class=ItnTask,
         datamodule_class=AdaINDataModule,
         trainer_defaults={
-            'logger': {
-                'class_path': 'TensorBoardLogger',
-                'init_args': {
-                    'save_dir': EXPERIMENTS_DIR,
-                    'name': 'itn',
-                },
-            },
+            'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='itn'),
+            'callbacks': [
+                LearningRateMonitor(),
+                ModelCheckpoint(
+                    filename='{epoch}-{step}-{val_loss:.3f}',
+                    monitor='val_loss',
+                    save_last=True,
+                    save_top_k=3,
+                ),
+            ],
         },
         auto_configure_optimizers=False,
     )

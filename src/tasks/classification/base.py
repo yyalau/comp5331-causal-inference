@@ -74,9 +74,9 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         # unless they are directly set as an attribute of the LightningModule
         # (as opposed to placing them inside a container like a dictionary)
         self._accuracy = Accuracy(task='multiclass', num_classes=num_classes)
-        self._precision = Precision(task='multiclass', num_classes=num_classes)
-        self._recall = Recall(task='multiclass', num_classes=num_classes)
-        self._f1 = F1Score(task='multiclass', num_classes=num_classes)
+        self._precision = Precision(task='multiclass', num_classes=num_classes, average='macro')
+        self._recall = Recall(task='multiclass', num_classes=num_classes, average='macro')
+        self._f1 = F1Score(task='multiclass', num_classes=num_classes, average='macro')
 
         self.metrics = {
             'acc': self._accuracy,
@@ -93,9 +93,13 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         y_hat = self.classifier(x)
 
         loss = self.loss_fn(y_hat, y)
-        metrics = {name: metric(y_hat, y.argmax(dim=-1)) for name, metric in self.metrics.items()}
 
-        return ClassificationEvalOutput(loss=loss, metrics=metrics, x=x, y=y, y_hat=y_hat)
+        for metric in self.metrics.values():
+            metric.update(y_hat, y.argmax(dim=-1))
+
+        # print('acc:', self._accuracy._final_state(), self._accuracy.compute())
+
+        return ClassificationEvalOutput(loss=loss, metrics=self.metrics, x=x, y=y, y_hat=y_hat)
 
     def forward(self, batch: X) -> Classification_Y:
         return self.classifier(batch)

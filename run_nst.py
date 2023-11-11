@@ -23,6 +23,7 @@ def cli():
                     filename='{epoch}-{step}-{val_loss:.3f}',
                     monitor='val_loss',
                     save_last=True,
+                    save_top_k=3,
                 ),
             ],
         },
