@@ -10,7 +10,7 @@ from torch.nn import functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
-from torchmetrics import Accuracy, F1Score, Precision, Recall
+from torchmetrics import Accuracy, F1Score, Metric, Precision, Recall
 
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -117,17 +117,17 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[X], *, prefix: str) -> None:
         raise NotImplementedError
 
-    def training_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
+    def training_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='train_')
         return self._process_eval_loss_metrics(eval_output, prefix='')
 
-    def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
+    def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor| Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='val_')
         return self._process_eval_loss_metrics(eval_output, prefix='val_')
 
-    def test_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
+    def test_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor| Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')

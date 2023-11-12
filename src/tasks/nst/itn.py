@@ -11,6 +11,7 @@ from torch.nn import functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.tensorboard.writer import SummaryWriter
+from torchmetrics import Metric
 from lightning.pytorch.loggers import TensorBoardLogger
 
 from ...models.nst import StyleTransfer_X, StyleTransfer_Y, ItnModel
@@ -218,17 +219,17 @@ class ItnTask(BaseTask[StyleTransfer_X, ItnEvalOutput, StyleTransfer_X, StyleTra
 
         plt.close()
 
-    def training_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+    def training_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='train_')
         return self._process_eval_loss_metrics(eval_output, prefix='')
 
-    def validation_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+    def validation_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='val_')
         return self._process_eval_loss_metrics(eval_output, prefix='val_')
 
-    def test_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor]:
+    def test_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')
