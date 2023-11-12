@@ -3,14 +3,16 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Generic
+from typing import Generic, Any
+
 
 import torch
 from torch.nn import functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
+from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.tensorboard.writer import SummaryWriter
-from torchmetrics import Accuracy, F1Score, Precision, Recall
+from torchmetrics import Accuracy, F1Score, Metric, Precision, Recall
 
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -97,8 +99,6 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         for metric in self.metrics.values():
             metric.update(y_hat, y.argmax(dim=-1))
 
-        # print('acc:', self._accuracy._final_state(), self._accuracy.compute())
-
         return ClassificationEvalOutput(loss=loss, metrics=self.metrics, x=x, y=y, y_hat=y_hat)
 
     def forward(self, batch: X) -> Classification_Y:
@@ -117,17 +117,31 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[X], *, prefix: str) -> None:
         raise NotImplementedError
 
-    def training_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
+    def _update_dataloader_sampler_epoch(self, dataloader: DataLoader[Any]):
+        if isinstance(dataloader.batch_sampler, DistributedSampler):
+                dataloader.batch_sampler.set_epoch(self.current_epoch)
+
+    def on_train_epoch_start(self) -> None:
+        train_loader = self.trainer.train_dataloader
+        if isinstance(train_loader, DataLoader):
+            self._update_dataloader_sampler_epoch(train_loader)
+
+    def on_validation_epoch_start(self) -> None:
+        val_loader = self.trainer.val_dataloaders
+        if isinstance(val_loader, DataLoader):
+            self._update_dataloader_sampler_epoch(val_loader)
+
+    def training_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='train_')
         return self._process_eval_loss_metrics(eval_output, prefix='')
 
-    def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
+    def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='val_')
         return self._process_eval_loss_metrics(eval_output, prefix='val_')
 
-    def test_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor]:
+    def test_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')

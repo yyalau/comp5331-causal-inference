@@ -11,11 +11,13 @@ from src.tasks.classification import ERMTask
 
 EXPERIMENTS_DIR = Path(__file__).parent / 'experiments'
 
+
 def cli():
     LightningCLI(
         model_class=ERMTask,
         datamodule_class=ERMDataModule,
         trainer_defaults={
+            'use_distributed_sampler': False,
             'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='erm'),
             'callbacks': [
                 LearningRateMonitor(),

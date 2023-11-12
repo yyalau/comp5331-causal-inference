@@ -1,22 +1,22 @@
 classifier:
   class_path: src.models.classification.fa.FAGT
   init_args:
-    beta: 0.45
+    beta: 0.3
     eta: 1.0
     pixel_mean: [0.0, 0.0, 0.0]
     pixel_std: [1.0, 1.0, 1.0]
     nst:
       class_path: src.models.nst.ada_in.AdaINModel
       init_args:
-        ckpt_path: null
-        alpha: 0.5
+        ckpt_path: experiments/nst/cnn_mn/checkpoints/epoch=69-step=7910-val_loss=6.461.ckpt
+        alpha: 0.6
         encoder: src.models.nst.AdaINEncoder
         decoder: src.models.nst.AdaINDecoder
     classifier:
       class_path: src.models.classification.erm.SmallConvNet
       init_args:
         num_classes: 10
-        pretrained_path: null
+        pretrained_path: experiments/erm/cnn_mn/checkpoints/epoch=9-step=2250-val_loss=0.474.ckpt
 optimizer:
   class_path: torch.optim.SGD
   init_args:
@@ -26,4 +26,4 @@ optimizer:
 scheduler:
   class_path: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
   init_args:
-    T_0: 30
+    T_0: 20

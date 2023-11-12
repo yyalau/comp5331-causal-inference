@@ -11,11 +11,13 @@ from src.tasks.classification import FATask
 
 EXPERIMENTS_DIR = Path(__file__).parent / 'experiments'
 
+
 def cli():
     LightningCLI(
         model_class=FATask,
         datamodule_class=FADataModule,
         trainer_defaults={
+            'use_distributed_sampler': False,
             'logger': TensorBoardLogger(save_dir=EXPERIMENTS_DIR, name='fa'),
             'callbacks': [
                 LearningRateMonitor(),
