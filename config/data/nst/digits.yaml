@@ -1,12 +1,13 @@
 batch_size: 32
-num_workers: 2
+num_workers: 7
 dataset_config:
   dataset_path_root: "./data/digits_dg"
   dataset_name: "DIGITS"
   num_classes : 10
   starts_from_zero : True
-  train_val_domains: ['mnist', 'mnist_m', 'svhn']
-  test_domains: ['mnist', 'mnist_m', 'syn']
+  train_domains: ['mnist', 'mnist_m', 'svhn']
+  val_domains: ['syn']
+  test_domains: ['syn']
   lazy: False
   preprocess_params:
     image_resize_params:
