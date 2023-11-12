@@ -197,4 +197,3 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')
-

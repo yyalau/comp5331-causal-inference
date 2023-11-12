@@ -97,8 +97,6 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         for metric in self.metrics.values():
             metric.update(y_hat, y.argmax(dim=-1))
 
-        # print('acc:', self._accuracy._final_state(), self._accuracy.compute())
-
         return ClassificationEvalOutput(loss=loss, metrics=self.metrics, x=x, y=y, y_hat=y_hat)
 
     def forward(self, batch: X) -> Classification_Y:
@@ -122,12 +120,12 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
         self._process_images(eval_output, batch_idx=batch_idx, prefix='train_')
         return self._process_eval_loss_metrics(eval_output, prefix='')
 
-    def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor| Metric]:
+    def validation_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='val_')
         return self._process_eval_loss_metrics(eval_output, prefix='val_')
 
-    def test_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor| Metric]:
+    def test_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
         self._process_images(eval_output, batch_idx=batch_idx, prefix='test_')
         return self._process_eval_loss_metrics(eval_output, prefix='test_')
