@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from torch.utils.data import DistributedSampler
-from .dataset.base import ImageDataset
 from typing import Iterator, List, Mapping, Optional
+
 from .func import get_flattend_indices_from_key
+from .dataset import ImageDataset
+
 import torch
 
 __all__ = [
