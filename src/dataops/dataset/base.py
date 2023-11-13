@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 from functools import reduce
-import operator
+from operator import add
 from pathlib import Path
 from typing import List, Optional, Tuple
 from typing_extensions import TypeAlias
@@ -179,9 +179,14 @@ class ImageDataset(Dataset[DatasetOutput]):
     def __len__(self) -> int:
         return self.len
 
-    def _ood_sample(self, batch_size: int) -> Tensor:
-        pool = list(reduce(operator.concat, self.domain_data_map.values()))
-        samples = sample_sequence_no_replace(pool, batch_size)
+    def _ood_sample(self, batch_size: int, current_domain: str) -> Tensor:
+
+        pool = [
+            list(domain_data)
+            for domain, domain_data in self.domain_data_map.items()
+            if domain != current_domain
+        ]
+        samples = sample_sequence_no_replace(reduce(add, pool), batch_size)
         return torch.stack([
             image_reader.load()
             for image_reader in samples
@@ -189,26 +194,27 @@ class ImageDataset(Dataset[DatasetOutput]):
 
     def _create_tensors_from_batch(
         self, batch: List[DatasetOutput]
-    ) -> Tuple[Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor, str]:
         num_classes = self.num_classes
         content = torch.stack([data.image for data in batch])
         labels = torch.from_numpy((np.array([data.label for data in batch])))
         if not self.starts_from_zero:
             labels = labels - 1
         one_hot_labels = torch.nn.functional.one_hot(labels, num_classes).float()
-        return content, one_hot_labels
+        domain = batch[0].domain
+        return content, one_hot_labels, domain
 
     def num_domains(self) -> int:
         return len(self.domain_data_map.keys())
 
     def collate_erm(self, batch: List[DatasetOutput]) -> Tuple[ERM_X, Classification_Y]:
-        content, labels = self._create_tensors_from_batch(batch)
+        content, labels, _ = self._create_tensors_from_batch(batch)
         return content, labels
 
     def collate_st(self, batch: List[DatasetOutput]) -> StyleTransfer_X:
         batch_size = len(batch)
-        content, _ = self._create_tensors_from_batch(batch)
-        style = self._ood_sample(batch_size)
+        content, _, domain = self._create_tensors_from_batch(batch)
+        style = self._ood_sample(batch_size, domain)
         return StyleTransfer_X(content=content, style=style)
 
     def collate_fa(
@@ -219,10 +225,10 @@ class ImageDataset(Dataset[DatasetOutput]):
         k = self.k
         if k is None:
             raise ValueError("Sample size `k` has not been set")
-        content, labels = self._create_tensors_from_batch(batch)
-        styles = [self._ood_sample(batch_size) for _ in range(k)]
+        content, labels, domain = self._create_tensors_from_batch(batch)
+        styles = [self._ood_sample(batch_size, domain) for _ in range(k)]
         return FA_X(content=content, styles=styles), labels
-    
+
     def collate_eval_fa(self, batch: List[DatasetOutput]) -> Tuple[FA_X, Classification_Y]:
-            content, labels = self._create_tensors_from_batch(batch)
-            return FA_X(content=content, styles=[]), labels
+        content, labels, _ = self._create_tensors_from_batch(batch)
+        return FA_X(content=content, styles=[]), labels
