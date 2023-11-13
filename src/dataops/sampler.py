@@ -41,7 +41,7 @@ class DomainBatchSampler(DistributedSampler[List[int]]):
             indices = list(range(len(value)))
             g = torch.Generator()
             g.manual_seed(self.seed + self.epoch)
-            indices = torch.randperm(len(indices), generator=g).tolist()  
+            indices = torch.randperm(len(indices), generator=g).tolist()
             res[domain] = indices
         return res
 
@@ -65,7 +65,7 @@ class DomainBatchSampler(DistributedSampler[List[int]]):
                     domain_indices[current_index:current_index + batch_size]
                 )
 
-            current_index = current_index + batch_size
+            current_index += batch_size
 
     def __len__(self) -> int:
 
