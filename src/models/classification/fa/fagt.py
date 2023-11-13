@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 import torch
 import torch.nn as nn
@@ -50,6 +51,7 @@ class FAGT(nn.Module, FAModel):
         beta: float = 0.2,
         pixel_mean: tuple[float, float, float] = (0.5, 0.5, 0.5),
         pixel_std: tuple[float, float, float] = (0.5, 0.5, 0.5),
+        ckpt_path: str | None = None,
     ) -> None:
         super().__init__()
 
@@ -59,6 +61,8 @@ class FAGT(nn.Module, FAModel):
         self._beta = beta
         self._pixel_mean = pixel_mean
         self._pixel_std = pixel_std
+
+        self.load_ckpt(ckpt_path)
 
         self.fst = FourierMix(eta)
         self.normalization = Normalize(mean=pixel_mean, std=pixel_std)
@@ -111,11 +115,31 @@ class FAGT(nn.Module, FAModel):
         x = inputs.get('content')
         fx = self.classifier(self.normalization(x))
 
-        fx_hats = [self.classifier(self.normalization(x_hat)) for x_hat in self.get_x_hats(inputs)]
-        fx_tildes = [self.classifier(self.normalization(x_tilde)) for x_tilde in self.get_x_tildes(inputs)]
-        fx_hats_tildes_avg = torch.stack([*fx_hats, *fx_tildes], dim=0).mean(dim=0)
+        if (inputs.get('styles')):
+            fx_hats = [self.classifier(self.normalization(x_hat)) for x_hat in self.get_x_hats(inputs)]
+            fx_tildes = [self.classifier(self.normalization(x_tilde)) for x_tilde in self.get_x_tildes(inputs)]
+            fx_hats_tildes_avg = torch.stack([*fx_hats, *fx_tildes], dim=0).mean(dim=0)
 
-        weighted_output = fx * self.beta + (1 - self.beta) * fx_hats_tildes_avg
-        predictions: Classification_Y = weighted_output
+            weighted_output = fx * self.beta + (1 - self.beta) * fx_hats_tildes_avg
+            predictions: Classification_Y = weighted_output
+        
+        predictions: Classification_Y = fx
 
         return predictions
+
+    def load_ckpt(self, ckpt_path: str | None) -> None:
+        """
+        Loads the weights for the model from a given path.
+        """
+        if ckpt_path is None:
+            return
+        if not os.path.exists(ckpt_path):
+            raise ValueError(f'`ckpt_path` does not exist: {ckpt_path}')
+
+        state_dict = torch.load(ckpt_path)['state_dict']
+
+        self.load_state_dict({
+            k.replace('network._encoder.', ''): v for k, v in state_dict.items() if k.startswith('network._encoder')
+        })
+
+        
