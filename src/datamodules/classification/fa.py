@@ -17,10 +17,10 @@ class FADataModule(BaseDataModule):
         return DataLoader(self.train_ds, num_workers=self.num_workers, collate_fn=self.train_ds.collate_fa, batch_sampler=self.train_batch_sampler)
 
     def val_dataloader(self) -> DataLoader[DatasetOutput]:
-        return DataLoader(self.val_ds, num_workers=self.num_workers, collate_fn=self.val_ds.collate_fa, batch_sampler=self.val_batch_sampler)
+        return DataLoader(self.val_ds, num_workers=self.num_workers, collate_fn=self.val_ds.collate_eval_fa, batch_sampler=self.val_batch_sampler)
 
     def test_dataloader(self) -> DataLoader[DatasetOutput]:
-        return DataLoader(self.test_ds, num_workers=self.num_workers, collate_fn=self.test_ds.collate_fa, batch_sampler=self.test_batch_sampler)
+        return DataLoader(self.test_ds, num_workers=self.num_workers, collate_fn=self.test_ds.collate_eval_fa, batch_sampler=self.test_batch_sampler)
 
     def predict_dataloader(self) -> DataLoader[DatasetOutput]:
         return DataLoader(self.full_ds, num_workers=self.num_workers, collate_fn=self.full_ds.collate_fa, batch_sampler=self.full_batch_sampler)

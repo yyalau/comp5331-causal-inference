@@ -222,3 +222,7 @@ class ImageDataset(Dataset[DatasetOutput]):
         content, labels = self._create_tensors_from_batch(batch)
         styles = [self._ood_sample(batch_size) for _ in range(k)]
         return FA_X(content=content, styles=styles), labels
+    
+    def collate_eval_fa(self, batch: List[DatasetOutput]) -> Tuple[FA_X, Classification_Y]:
+            content, labels = self._create_tensors_from_batch(batch)
+            return FA_X(content=content, styles=[]), labels
