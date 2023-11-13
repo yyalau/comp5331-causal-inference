@@ -59,6 +59,12 @@ class PretrainedNNModule(NNModule[torch.Tensor, torch.Tensor], Protocol):
 
         if not os.path.exists(self.default_wpath):
             os.makedirs(os.path.dirname(self.default_wpath), exist_ok=True)
-            download_from_gdrive(self.default_url, self.default_wpath)
+            if 'drive.google.com' in self.default_url:
+                download_from_gdrive(self.default_url, self.default_wpath)
+            else:
+                os.system( 
+                    f'wget {self.default_url} -O ' 
+                    + os.path.join(self.default_wpath)
+                )
 
         net.load_state_dict(torch.load(self.default_wpath))

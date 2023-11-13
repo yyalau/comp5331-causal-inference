@@ -181,7 +181,7 @@ class AdaINTask(BaseTask[StyleTransfer_X, AdaINEvalOutput, StyleTransfer_X, Styl
 
         writer.add_figure(f'images/{prefix}batch', fig, global_step=self.global_step)
 
-        plt.close()
+        plt.close(fig)
 
     def training_step(self, batch: StyleTransfer_X, batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
