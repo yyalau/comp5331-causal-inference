@@ -4,11 +4,12 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Any
 
 import yaml
 
 import torch
+from torch.utils.data import DataLoader, DistributedSampler
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torchmetrics import Metric
@@ -94,6 +95,20 @@ class BaseTask(pl.LightningModule, Generic[Eval_X, Eval_Out, Infer_X, Infer_Y], 
 
     def on_predict_start(self) -> None:
         self._log_cli_config()
+
+    def _update_dataloader_sampler_epoch(self, dataloader: DataLoader[Any]):
+        if isinstance(dataloader.batch_sampler, DistributedSampler):
+                dataloader.batch_sampler.set_epoch(self.current_epoch)
+
+    def on_train_epoch_start(self) -> None:
+        train_loader = self.trainer.train_dataloader
+        if isinstance(train_loader, DataLoader):
+            self._update_dataloader_sampler_epoch(train_loader)
+
+    def on_validation_epoch_start(self) -> None:
+        val_loader = self.trainer.val_dataloaders
+        if isinstance(val_loader, DataLoader):
+            self._update_dataloader_sampler_epoch(val_loader)
 
     def training_step(self, batch: Eval_X, batch_idx: int) -> dict[str, torch.Tensor | Metric]:  # pyright: ignore[reportIncompatibleMethodOverride]
         eval_output = self._eval_step(batch, batch_idx)

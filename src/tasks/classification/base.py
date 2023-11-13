@@ -3,14 +3,13 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Generic, Any
+from typing import Generic
 
 
 import torch
 from torch.nn import functional as F
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.tensorboard.writer import SummaryWriter
 from torchmetrics import Accuracy, F1Score, Metric, Precision, Recall
 
@@ -116,20 +115,6 @@ class ClassificationTask(BaseTask[tuple[X, Classification_Y], ClassificationEval
     @abstractmethod
     def _log_images(self, writer: SummaryWriter, eval_output: ClassificationEvalOutput[X], *, prefix: str) -> None:
         raise NotImplementedError
-
-    def _update_dataloader_sampler_epoch(self, dataloader: DataLoader[Any]):
-        if isinstance(dataloader.batch_sampler, DistributedSampler):
-                dataloader.batch_sampler.set_epoch(self.current_epoch)
-
-    def on_train_epoch_start(self) -> None:
-        train_loader = self.trainer.train_dataloader
-        if isinstance(train_loader, DataLoader):
-            self._update_dataloader_sampler_epoch(train_loader)
-
-    def on_validation_epoch_start(self) -> None:
-        val_loader = self.trainer.val_dataloaders
-        if isinstance(val_loader, DataLoader):
-            self._update_dataloader_sampler_epoch(val_loader)
 
     def training_step(self, batch: tuple[X, Classification_Y], batch_idx: int) -> dict[str, torch.Tensor | Metric]:
         eval_output = self._eval_step(batch, batch_idx)
