@@ -124,10 +124,9 @@ class FAGT(nn.Module, FAModel):
 
             weighted_output = fx * self.beta + (1 - self.beta) * fx_hats_tildes_avg
             predictions: Classification_Y = weighted_output
-        
-        predictions: Classification_Y = fx
+            return predictions
 
-        return predictions
+        return fx
 
     def load_ckpt(self, ckpt_path: Path) -> None:
         """
