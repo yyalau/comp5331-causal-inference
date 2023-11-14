@@ -1,6 +1,7 @@
 classifier:
   class_path: src.models.classification.fa.FAGT
   init_args:
+    ckpt_path: null
     beta: 0.7
     eta: 1.0
     pixel_mean: [0.0, 0.0, 0.0]
@@ -16,7 +17,7 @@ classifier:
       class_path: src.models.classification.erm.ResNet18
       init_args:
         num_classes: 7
-        pretrained_url: https://download.pytorch.org/models/resnet18-5c106cde.pth
+        backbone_pretrained_url: https://download.pytorch.org/models/resnet18-5c106cde.pth
 optimizer:
   class_path: torch.optim.SGD
   init_args:
