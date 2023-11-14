@@ -79,20 +79,28 @@ class SmallConvNet(nn.Module, ERMModel):
         self.classifier = nn.Linear(in_features=self.backbone.out_features, out_features=num_classes)
 
         if pretrained_path is not None:
-            self.load_weights(pretrained_path)
+            self.load_ckpt(pretrained_path)
 
-    def load_weights(self, pretrained_path: Path) -> None:
-        if pretrained_path.exists() and pretrained_path.is_file():
-            state_dict: dict[str, Any] = torch.load(pretrained_path)['state_dict']
+    def load_ckpt(self, ckpt_path: Path, is_fa: bool = False) -> None:
+        if ckpt_path.exists() and ckpt_path.is_file():
+            state_dict: dict[str, Any] = torch.load(ckpt_path)['state_dict']
 
-            self.backbone.load_state_dict({
-                k.replace('classifier.backbone.', ''): v for k, v in state_dict.items() if k.startswith('classifier.backbone.')
-            })
-            self.classifier.load_state_dict({
-                k.replace('classifier.classifier.', ''): v for k, v in state_dict.items() if k.startswith('classifier.classifier.')
-            })
+            if is_fa:
+                self.backbone.load_state_dict({
+                    k.replace('classifier._classifier.backbone.', ''): v for k, v in state_dict.items() if k.startswith('classifier._classifier.backbone.')
+                })
+                self.classifier.load_state_dict({
+                    k.replace('classifier._classifier.classifier.', ''): v for k, v in state_dict.items() if k.startswith('classifier._classifier.classifier.')
+                })
+            else:
+                self.backbone.load_state_dict({
+                    k.replace('classifier.backbone.', ''): v for k, v in state_dict.items() if k.startswith('classifier.backbone.')
+                })
+                self.classifier.load_state_dict({
+                    k.replace('classifier.classifier.', ''): v for k, v in state_dict.items() if k.startswith('classifier.classifier.')
+                })
         else:
-            raise ValueError(f'provided path {pretrained_path} does not exist to load the pretrained params.')
+            raise ValueError(f'provided path {ckpt_path} does not exist to load the pretrained params.')
 
     @property
     def num_classes(self) -> int:

@@ -1,13 +1,16 @@
 from __future__ import annotations
+from pathlib import Path
 
+import torch
 from torch import nn
 from torch.utils import model_zoo
 
-from typing import Optional
+from typing import Optional, Any
 # from einops import rearrange, repeat
 # from einops.layers.torch import Rearrange
 
 from .base import ERMModel, ERM_X, Classification_Y
+
 
 __all__ = ['ResNet18']
 
@@ -190,21 +193,25 @@ class ResNet18(nn.Module, ERMModel):
        <https://doi.org/10.48550/arXiv.1512.03385>
     """
 
-    def __init__(self, *, num_classes: int, pretrained_url: str = model_urls['resnet18']):
+    def __init__(self, *, num_classes: int, ckpt_path: Path | None = None, backbone_pretrained_url: str = model_urls['resnet18']):
         super().__init__()
 
         self._num_classes = num_classes
-        self._pretrained_url = pretrained_url
+        self._pretrained_url = backbone_pretrained_url
 
-        self.backbone = resnet18(pretrained_url)
+        self.backbone = resnet18(backbone_pretrained_url)
         feature_dim = self.backbone.out_features
 
         if feature_dim is None:
             raise ValueError(f'Not able to load classifier while the feature dimesion is {feature_dim}')
 
-        self.classifier = None
-        if num_classes > 0:
-            self.classifier = nn.Linear(feature_dim, num_classes)
+        if (num_classes == 0):
+            raise ValueError(f'number of classes cannot be {num_classes}')
+
+        self.classifier = nn.Linear(feature_dim, num_classes)
+
+        if ckpt_path is not None:
+            self.load_ckpt(ckpt_path)
 
     @property
     def num_classes(self) -> int:
@@ -214,15 +221,32 @@ class ResNet18(nn.Module, ERMModel):
     def pretrained_url(self) -> str:
         return self._pretrained_url
 
+    def load_ckpt(self, ckpt_path: Path, is_fa: bool = False):
+        if ckpt_path.exists() and ckpt_path.is_file():
+            state_dict: dict[str, Any] = torch.load(ckpt_path)['state_dict']
+
+            if is_fa:
+                self.backbone.load_state_dict({
+                    k.replace('classifier._classifier.backbone.', ''): v for k, v in state_dict.items() if k.startswith('classifier._classifier.backbone.')
+                })
+                self.classifier.load_state_dict({
+                    k.replace('classifier._classifier.classifier.', ''): v for k, v in state_dict.items() if k.startswith('classifier._classifier.classifier.')
+                })
+            else:
+                self.backbone.load_state_dict({
+                    k.replace('classifier.backbone.', ''): v for k, v in state_dict.items() if k.startswith('classifier.backbone.')
+                })
+                self.classifier.load_state_dict({
+                    k.replace('classifier.classifier.', ''): v for k, v in state_dict.items() if k.startswith('classifier.classifier.')
+                })
+        else:
+            raise ValueError(f'provided path {ckpt_path} does not exist to load the pretrained params.')
+
     def get_num_classes(self) -> int:
         return self.num_classes
 
     def forward(self, x: ERM_X) -> Classification_Y:
         f = self.backbone(x)
-
-        if self.classifier is None:
-            return f
-
         y = self.classifier(f)
 
         return y
