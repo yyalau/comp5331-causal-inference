@@ -1,0 +1,26 @@
+classifier:
+  class_path: src.models.classification.fa.FAGT
+  init_args:
+    ckpt_path: null
+    beta: 0.3
+    eta: 1.0
+    pixel_mean: [0.0, 0.0, 0.0]
+    pixel_std: [1.0, 1.0, 1.0]
+    nst:
+      class_path: src.models.nst.ada_in.AdaINModel
+      init_args:
+        alpha: 0.6
+        encoder: src.models.nst.AdaINEncoder
+        decoder: src.models.nst.AdaINDecoder
+        ckpt_path: experiments/nst/digits_sy/checkpoints/epoch=68-step=15525-val_loss=7.543.ckpt
+    classifier:
+      class_path: src.models.classification.erm.ViT_wrapper
+      init_args:
+        image_size: 32
+        num_classes: 10
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.001
+scheduler:
+  class_path: torch.optim.lr_scheduler.LinearLR
