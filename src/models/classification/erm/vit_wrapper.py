@@ -42,7 +42,7 @@ class ViT_wrapper(nn.Module, ERMModel):
 
         self._image_size = image_size
         if self._image_size != 224:
-            self.proj_layer = nn.Linear(self._image_size, 224) 
+            self.proj_layer = nn.ConvTranspose2d(3, 3, kernel_size=7, stride=7)
 
         self._num_classes = num_classes
         self.backbone = vit_b_16(ViT_B_16_Weights)
@@ -80,7 +80,7 @@ class ViT_wrapper(nn.Module, ERMModel):
     def forward(self, img: ERM_X) -> Classification_Y:
         
         if self._image_size != 224:
-            img = self.proj_layer(img) 
+            img = self.proj_layer(img)
         
         x = self.backbone(img)
         return self.classifier(x)
