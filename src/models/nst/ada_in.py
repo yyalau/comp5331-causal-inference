@@ -142,62 +142,44 @@ class AdaINDecoder(nn.Module, PretrainedNNModule):
         self._pretrain = pretrain
         self._wpath = wpath
 
-
-        self.padding = nn.ReflectionPad2d(padding=1)  # Using reflection padding as described in vgg19
-        self.UpSample = nn.Upsample(scale_factor=2, mode="nearest")
-
-        self.conv4_1 = nn.Conv2d(in_channels=512, out_channels=256, kernel_size=3, stride=1, padding=0)
-
-        self.conv3_1 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0)
-        self.conv3_2 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0)
-        self.conv3_3 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0)
-        self.conv3_4 = nn.Conv2d(in_channels=256, out_channels=128, kernel_size=3, stride=1, padding=0)
-
-        self.conv2_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=0)
-        self.conv2_2 = nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, stride=1, padding=0)
-
-        self.conv1_1 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
-        self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=0)
-
-
         self.net = nn.Sequential(
-            self.padding,
-            self.conv4_1,
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=512, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
-            self.UpSample,
+            nn.Upsample(scale_factor=2, mode="nearest"),
 
-            self.padding,
-            self.conv3_1,
-            nn.ReLU(inplace=True),
-
-            self.padding,
-            self.conv3_2,
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv3_3,
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv3_4,
-            nn.ReLU(inplace=True),
-            self.UpSample,
-
-            self.padding,
-            self.conv2_1,
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv2_2,
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=256, out_channels=128, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
-            self.UpSample,
+            nn.Upsample(scale_factor=2, mode="nearest"),
 
-            self.padding,
-            self.conv1_1,
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv1_2,
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, stride=1, padding=0),
+            nn.ReLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0),
+            nn.ReLU(inplace=True),
+
+            nn.ReflectionPad2d(padding=1) ,
+            nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=0),
         )
 
         self.load_pretrain(pretrain=pretrain, net = self.net)
