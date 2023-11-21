@@ -264,7 +264,6 @@ class AdaINModel(nn.Module, StyleTransferModel):
             raise ValueError(f'`ckpt_path` does not exist: {ckpt_path}')
 
         state_dict = torch.load(ckpt_path)['state_dict']
-        # state_dict = {k.replace('network.', ''): v for k, v in state_dict.items()}
 
         if (self._encoder.pretrain or self._decoder.pretrain) and ckpt_path is not None:
             raise ValueError('Cannot load pre-trained weights and checkpoint weights at the same time.')
