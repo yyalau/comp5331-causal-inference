@@ -62,8 +62,8 @@ class PretrainedNNModule(NNModule[torch.Tensor, torch.Tensor], Protocol):
             if 'drive.google.com' in self.default_url:
                 download_from_gdrive(self.default_url, self.default_wpath)
             else:
-                os.system( 
-                    f'wget {self.default_url} -O ' 
+                os.system(
+                    f'wget {self.default_url} -O '
                     + os.path.join(self.default_wpath)
                 )
 

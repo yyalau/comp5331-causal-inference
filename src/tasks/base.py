@@ -98,7 +98,7 @@ class BaseTask(pl.LightningModule, Generic[Eval_X, Eval_Out, Infer_X, Infer_Y], 
 
     def _update_dataloader_sampler_epoch(self, dataloader: DataLoader[Any]):
         if isinstance(dataloader.batch_sampler, DistributedSampler):
-                dataloader.batch_sampler.set_epoch(self.current_epoch)
+            dataloader.batch_sampler.set_epoch(self.current_epoch)
 
     def on_train_epoch_start(self) -> None:
         train_loader = self.trainer.train_dataloader

@@ -6,7 +6,7 @@ from torch import nn
 from torchvision.models.vision_transformer import vit_b_16, vit_b_32
 from torchvision.models import ViT_B_16_Weights
 from .base import ERM_X, ERMModel, Classification_Y
-from typing import Optional, Any
+from typing import Any
 
 __all__ = ['ViT_wrapper']
 
@@ -56,10 +56,10 @@ class ViT_wrapper(nn.Module, ERMModel):
     @property
     def num_classes(self) -> int:
         return self._num_classes
-    
+
     def get_num_classes(self) -> int:
         return self.num_classes
-    
+
     def load_ckpt(self, ckpt_path: Path, is_fa: bool = False):
         if ckpt_path.exists() and ckpt_path.is_file():
             state_dict: dict[str, Any] = torch.load(ckpt_path)['state_dict']
@@ -82,9 +82,8 @@ class ViT_wrapper(nn.Module, ERMModel):
             raise ValueError(f'provided path {ckpt_path} does not exist to load the pretrained params.')
 
     def forward(self, img: ERM_X) -> Classification_Y:
-        
         if self._image_size != 224:
             img = self.proj_layer(img)
-        
+
         x = self.backbone(img)
         return self.classifier(x)

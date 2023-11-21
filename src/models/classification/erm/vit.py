@@ -8,7 +8,7 @@ from torch import nn
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
-from .base import ERM_X, ERMModel
+from .base import ERM_X
 
 __all__ = ['ViT']
 
@@ -91,7 +91,7 @@ class Transformer(nn.Module):
 
         return self.norm(x)
 
-class ViT(nn.Module, ERMModel):
+class ViT(nn.Module):
     """
     Represents a ViT (Vision Transformer) [1]_ classifier for images.
 
