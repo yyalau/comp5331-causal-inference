@@ -154,21 +154,7 @@ python run_fa.py test \
         --ckpt_path "path/to/the_trained_fagt_ckpt_file"
 ```
 
-To train FAGT with ViT model as classifier on Digits-DG dataset:
-``` sh
-# By default, checkpoints are stored in `experiments/fa`
-python run_fa.py fit \
-        --data "config/data/classification/fa/pacs.yaml" \
-        --model "config/model/classification/fa/pacs/fagt-vit-wrapper-pac.yaml" \
-        --model.nst.ckpt_path "path/to/the_trained_nst_ckpt_file" \
-        --trainer.devices [0] \
-        --trainer.max_epochs 50 \
-        --data.dataset_config.train_domains ["art_painting","cartoon","photo"] \
-        --data.dataset_config.val_domains ["art_painting","cartoon","photo"] \
-        --data.dataset_config.test_domains ["sketch"]
-```
-
-To train FAGT with ViT model as classifier on PACS dataset:
+To train FAGT with pretrained ViT model as classifier on Digits-DG dataset:
 ``` sh
 # By default, checkpoints are stored in `experiments/fa`
 python run_fa.py fit \
@@ -180,6 +166,20 @@ python run_fa.py fit \
         --data.dataset_config.train_domains ["mnist_m","mnist","svhn"] \
         --data.dataset_config.val_domains ["mnist_m","mnist","svhn"] \
         --data.dataset_config.test_domains ["syn"]
+```
+
+To train FAGT with pretrained ViT model as classifier on PACS dataset:
+``` sh
+# By default, checkpoints are stored in `experiments/fa`
+python run_fa.py fit \
+        --data "config/data/classification/fa/pacs.yaml" \
+        --model "config/model/classification/fa/pacs/fagt-vit-wrapper-pac.yaml" \
+        --model.nst.ckpt_path "path/to/the_trained_nst_ckpt_file" \
+        --trainer.devices [0] \
+        --trainer.max_epochs 50 \
+        --data.dataset_config.train_domains ["art_painting","cartoon","photo"] \
+        --data.dataset_config.val_domains ["art_painting","cartoon","photo"] \
+        --data.dataset_config.test_domains ["sketch"]
 ```
 
 ## File Structure
@@ -216,8 +216,8 @@ python run_fa.py fit \
                 - `base.py`: Defines the input data type of the ERM models and its base class. 
                 - `cnn.py`: Defines the architecture of small CNN and its submodules.
                 - `resnet18.py`: Defines the architecture of ResNet-18 and its submodules.
-                - `vit_wrapper.py`: Defines the additional properties. such as checkpoint loading, of ViT classifier.
-                - `vit.py`: Defines the architecture of ViT classifier and its submodules.
+                - `vit_wrapper.py`: Defines the additional properties. such as checkpoint loading, of ViT classifier (with pretrained ViT-Base/16).
+                - `vit.py`: Defines the architecture of ViT classifier (without pretrained) and its submodules.
             - `fa`: 
                 - `base.py`: Defines the input data type of the FA frameworks and its base class
                 - `faft.py`: Defines the forward passing of FAFT.
