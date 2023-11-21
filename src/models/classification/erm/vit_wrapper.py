@@ -27,6 +27,7 @@ class ViT_wrapper(nn.Module, ERMModel):
             *,
             image_size: int,
             num_classes: int,
+            ckpt_path: Path | None = None
             # dim: int,
             # depth: int,
             # heads: int,
@@ -45,10 +46,13 @@ class ViT_wrapper(nn.Module, ERMModel):
             self.proj_layer = nn.ConvTranspose2d(3, 3, kernel_size=7, stride=7)
 
         self._num_classes = num_classes
+
         self.backbone = vit_b_16(ViT_B_16_Weights)
         if num_classes > 0:
             self.classifier = nn.Linear(1000, num_classes)
 
+        if ckpt_path is not None:
+            self.load_ckpt(ckpt_path)
     @property
     def num_classes(self) -> int:
         return self._num_classes
