@@ -1,10 +1,9 @@
 from __future__ import annotations
+
 import os
 
 import torch
 import torch.nn as nn
-
-from ..base import NNModule
 
 from .base import StyleTransfer_X, StyleTransfer_Y, StyleTransferModel, PretrainedNNModule
 
@@ -20,7 +19,7 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
     wpath : str, optional
         If given, loads the weights of the encoder from the provided path.
     """
-    
+
     def __init__(self, *, pretrain: bool = False, freeze: bool = False):
 
         super().__init__()
@@ -36,52 +35,52 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3),
             nn.ReLU(inplace=True),  # First layer from which Style Loss is calculated
             nn.ReflectionPad2d(padding=1),
-            
+
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3),
             nn.ReLU(inplace=True),  # Second layer from which Style Loss is calculated
-            
+
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),  # Third layer from which Style Loss is calculated
             nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3),
-            
+
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
-            
+
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
-            
+
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),  # This is Relu 4.1 The output layer of the encoder.
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
-            
+
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
-            
+
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=0, ceil_mode=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
-            
+
             nn.ReLU(inplace=True),
             nn.ReflectionPad2d(padding=1),
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
@@ -94,13 +93,14 @@ class AdaINEncoder(nn.Module, PretrainedNNModule):
             nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3),
             nn.ReLU(inplace=True),
         )
-        
+
         self.load_pretrain(pretrain=pretrain, net = vgg)
         self.net = vgg[:31]
 
         if freeze:
-            for param in self.parameters(): param.requires_grad = False
-                
+            for param in self.parameters():
+                param.requires_grad = False
+
     @property
     def pretrain(self) -> bool:
         return self._pretrain
@@ -142,62 +142,44 @@ class AdaINDecoder(nn.Module, PretrainedNNModule):
         self._pretrain = pretrain
         self._wpath = wpath
 
-
-        self.padding = nn.ReflectionPad2d(padding=1)  # Using reflection padding as described in vgg19
-        self.UpSample = nn.Upsample(scale_factor=2, mode="nearest")
-
-        self.conv4_1 = nn.Conv2d(in_channels=512, out_channels=256, kernel_size=3, stride=1, padding=0)
-
-        self.conv3_1 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0)
-        self.conv3_2 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0)
-        self.conv3_3 = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0)
-        self.conv3_4 = nn.Conv2d(in_channels=256, out_channels=128, kernel_size=3, stride=1, padding=0)
-
-        self.conv2_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=0)
-        self.conv2_2 = nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, stride=1, padding=0)
-
-        self.conv1_1 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0)
-        self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=0)
-
-
         self.net = nn.Sequential(
-            self.padding,
-            self.conv4_1,
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=512, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
-            self.UpSample,
+            nn.Upsample(scale_factor=2, mode="nearest"),
 
-            self.padding,
-            self.conv3_1,
-            nn.ReLU(inplace=True),
-
-            self.padding,
-            self.conv3_2,
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv3_3,
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv3_4,
-            nn.ReLU(inplace=True),
-            self.UpSample,
-
-            self.padding,
-            self.conv2_1,
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv2_2,
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=256, out_channels=128, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
-            self.UpSample,
+            nn.Upsample(scale_factor=2, mode="nearest"),
 
-            self.padding,
-            self.conv1_1,
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
 
-            self.padding,
-            self.conv1_2,
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, stride=1, padding=0),
+            nn.ReLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode="nearest"),
+
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=0),
+            nn.ReLU(inplace=True),
+
+            nn.ReflectionPad2d(padding=1),
+            nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=0),
         )
 
         self.load_pretrain(pretrain=pretrain, net = self.net)
@@ -282,11 +264,10 @@ class AdaINModel(nn.Module, StyleTransferModel):
             raise ValueError(f'`ckpt_path` does not exist: {ckpt_path}')
 
         state_dict = torch.load(ckpt_path)['state_dict']
-        # state_dict = {k.replace('network.', ''): v for k, v in state_dict.items()}
-        
-        if (self._encoder.pretrain or self._decoder.pretrain ) and  ckpt_path is not None:
+
+        if (self._encoder.pretrain or self._decoder.pretrain) and ckpt_path is not None:
             raise ValueError('Cannot load pre-trained weights and checkpoint weights at the same time.')
-        
+
         self._encoder.load_state_dict({
             k.replace('network._encoder.', ''): v for k, v in state_dict.items() if k.startswith('network._encoder')
         })
