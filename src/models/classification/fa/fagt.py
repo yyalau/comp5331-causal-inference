@@ -134,6 +134,3 @@ class FAGT(nn.Module, FAModel):
         """
 
         self.classifier.load_ckpt(ckpt_path=Path(ckpt_path), is_fa=True)
-
-
-        
